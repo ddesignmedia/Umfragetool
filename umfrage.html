@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echtzeit-Feedback-Tool</title>
+    <!-- Einbindung der Bibliotheken für PDF-Export und QR-Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-color: #f8f9fa;
+            --surface-color: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button.secondary {
+            background-color: var(--secondary-color);
+        }
+
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        button.danger {
+            background-color: var(--danger-color);
+        }
+        
+        button.danger:hover {
+            background-color: #c82333;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .question-block {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .option-input {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .option-input input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        .result-bar-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .result-bar {
+            background-color: var(--success-color);
+            height: 24px;
+            line-height: 24px;
+            color: white;
+            text-align: right;
+            padding-right: 10px;
+            white-space: nowrap;
+            transition: width 0.5s ease-in-out;
+            box-sizing: border-box;
+        }
+
+        #results-container .card {
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .loader {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+
+        #share-section {
+            text-align: center;
+            border: 2px dashed var(--primary-color);
+            padding: 20px;
+            border-radius: 12px;
+        }
+        
+        #share-link {
+            font-weight: bold;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+
+        #qrcode {
+            margin: 20px auto 0;
+            padding: 10px;
+            background: white;
+            display: inline-block;
+        }
+        
+        .text-answer {
+             background-color: #f8f9fa;
+             border-left: 4px solid var(--primary-color);
+             padding: 10px 15px;
+             margin-bottom: 10px;
+             border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Echtzeit-Feedback-Tool</h1>
+
+        <!-- Ansicht zum Erstellen der Umfrage -->
+        <div id="create-view">
+            <div class="card">
+                <h2>Neue Umfrage erstellen</h2>
+                <input type="text" id="survey-title" placeholder="Titel der Umfrage">
+                <div id="questions-container"></div>
+                <button id="add-question-btn">Frage hinzufügen</button>
+                <button id="create-survey-btn" style="float: right;">Umfrage starten</button>
+            </div>
+        </div>
+
+        <!-- Ansicht zum Ausfüllen der Umfrage -->
+        <div id="survey-view" class="hidden">
+            <div class="card">
+                <h2 id="participant-survey-title"></h2>
+                <form id="survey-form"></form>
+                <button id="submit-survey-btn">Antworten absenden</button>
+            </div>
+             <div id="thank-you-message" class="card hidden" style="text-align: center;">
+                <h3>Vielen Dank für Ihre Teilnahme!</h3>
+            </div>
+        </div>
+
+        <!-- Ansicht für die Live-Ergebnisse -->
+        <div id="results-view" class="hidden">
+            <div class="card">
+                <h2 id="results-survey-title">Live-Ergebnisse</h2>
+                <div id="share-section">
+                     <h3>Teilen Sie diesen Link mit Ihrem Publikum:</h3>
+                     <p id="share-link"></p>
+                     <div id="qrcode"></div>
+                     <br>
+                     <button id="copy-link-btn">Link kopieren</button>
+                </div>
+            </div>
+            <div id="results-container">
+                <div class="loader">Warte auf erste Antworten...</div>
+            </div>
+             <div class="card" style="text-align: center;">
+                <button id="export-pdf-btn">Ergebnisse als PDF speichern</button>
+             </div>
+        </div>
+
+        <!-- Ladeanzeige -->
+        <div id="loading-view" class="loader">
+            <h2>Lade...</h2>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDKs importieren
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        // --- Globale Variablen und Konfiguration ---
+        
+        // Firebase Konfiguration aus der Umgebung holen
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-feedback-app';
+
+        let db, auth;
+        let unsubscribeFromResponses = null; // Funktion zum Beenden des Listeners
+        
+        // --- UI Elemente ---
+        const views = {
+            create: document.getElementById('create-view'),
+            survey: document.getElementById('survey-view'),
+            results: document.getElementById('results-view'),
+            loading: document.getElementById('loading-view')
+        };
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        const createSurveyBtn = document.getElementById('create-survey-btn');
+        const submitSurveyBtn = document.getElementById('submit-survey-btn');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+
+        // --- App Initialisierung ---
+
+        async function setupApp() { // Umbenannt von initializeApp, um Konflikte zu vermeiden
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                await signInAnonymously(auth);
+                console.log("Anonyme Anmeldung erfolgreich.");
+                handleRouting();
+            } catch (error) {
+                console.error("Firebase Initialisierung fehlgeschlagen:", error);
+                alert("Fehler bei der Verbindung zum Service. Bitte laden Sie die Seite neu.");
+            }
+        }
+        
+        // --- Routing ---
+
+        function handleRouting() {
+            const hash = window.location.hash;
+            hideAllViews();
+
+            if (hash.startsWith('#results/')) {
+                const surveyId = hash.split('/')[1];
+                showResultsView(surveyId);
+            } else if (hash.startsWith('#survey/')) {
+                const surveyId = hash.split('/')[1];
+                showSurveyView(surveyId);
+            } else {
+                showCreateView();
+            }
+        }
+
+        function hideAllViews() {
+            Object.values(views).forEach(view => view.classList.add('hidden'));
+        }
+
+        window.addEventListener('hashchange', handleRouting);
+        
+        // --- Ansicht: Umfrage erstellen ---
+
+        let questionCount = 0;
+
+        function showCreateView() {
+            views.create.classList.remove('hidden');
+            addQuestion(); // Direkt eine erste Frage hinzufügen
+        }
+
+        function addQuestion() {
+            questionCount++;
+            const container = document.getElementById('questions-container');
+            const questionBlock = document.createElement('div');
+            questionBlock.className = 'question-block';
+            questionBlock.id = `question-${questionCount}`;
+            questionBlock.innerHTML = `
+                <h3>Frage ${questionCount}</h3>
+                <input type="text" class="question-text" placeholder="Ihre Frage hier...">
+                <label for="question-type-${questionCount}">Fragetyp:</label>
+                <select class="question-type" id="question-type-${questionCount}">
+                    <option value="mc">Multiple-Choice</option>
+                    <option value="text">Offener Text</option>
+                </select>
+                <div class="options-container">
+                     <div class="option-input">
+                        <input type="text" class="option-text" placeholder="Antwortmöglichkeit 1">
+                     </div>
+                     <div class="option-input">
+                        <input type="text" class="option-text" placeholder="Antwortmöglichkeit 2">
+                     </div>
+                </div>
+                <button type="button" class="add-option-btn secondary">Weitere Option</button>
+                <button type="button" class="remove-question-btn danger" style="float: right;">Frage entfernen</button>
+            `;
+            container.appendChild(questionBlock);
+
+            questionBlock.querySelector('.question-type').addEventListener('change', (e) => {
+                const optionsDiv = questionBlock.querySelector('.options-container');
+                const addOptionBtn = questionBlock.querySelector('.add-option-btn');
+                if (e.target.value === 'text') {
+                    optionsDiv.classList.add('hidden');
+                    addOptionBtn.classList.add('hidden');
+                } else {
+                    optionsDiv.classList.remove('hidden');
+                    addOptionBtn.classList.remove('hidden');
+                }
+            });
+
+            questionBlock.querySelector('.add-option-btn').addEventListener('click', () => {
+                addOption(questionBlock);
+            });
+            
+            questionBlock.querySelector('.remove-question-btn').addEventListener('click', () => {
+                questionBlock.remove();
+            });
+        }
+
+        function addOption(questionBlock) {
+            const optionsContainer = questionBlock.querySelector('.options-container');
+            const optionCount = optionsContainer.children.length + 1;
+            const newOption = document.createElement('div');
+            newOption.className = 'option-input';
+            newOption.innerHTML = `
+                <input type="text" class="option-text" placeholder="Antwortmöglichkeit ${optionCount}">
+                <button type="button" class="remove-option-btn danger">-</button>
+            `;
+            optionsContainer.appendChild(newOption);
+            newOption.querySelector('.remove-option-btn').addEventListener('click', () => {
+                newOption.remove();
+            });
+        }
+
+        addQuestionBtn.addEventListener('click', addQuestion);
+
+        createSurveyBtn.addEventListener('click', async () => {
+            const title = document.getElementById('survey-title').value.trim();
+            if (!title) {
+                alert("Bitte geben Sie einen Titel für die Umfrage ein.");
+                return;
+            }
+
+            const questions = [];
+            const questionBlocks = document.querySelectorAll('.question-block');
+            if(questionBlocks.length === 0){
+                alert("Bitte fügen Sie mindestens eine Frage hinzu.");
+                return;
+            }
+
+            for (const block of questionBlocks) {
+                const text = block.querySelector('.question-text').value.trim();
+                const type = block.querySelector('.question-type').value;
+
+                if (!text) {
+                    alert("Bitte geben Sie für jede Frage einen Text ein.");
+                    return;
+                }
+
+                const question = { id: `q${questions.length + 1}`, text, type };
+
+                if (type === 'mc') {
+                    question.options = [];
+                    const optionInputs = block.querySelectorAll('.option-text');
+                    optionInputs.forEach(input => {
+                        const optionText = input.value.trim();
+                        if (optionText) {
+                            question.options.push(optionText);
+                        }
+                    });
+                    if(question.options.length < 2){
+                        alert("Multiple-Choice-Fragen benötigen mindestens zwei Antwortmöglichkeiten.");
+                        return;
+                    }
+                }
+                questions.push(question);
+            }
+
+            try {
+                // Umfrage in Firestore speichern
+                const surveyData = {
+                    title,
+                    questions,
+                    createdAt: serverTimestamp()
+                };
+                const surveyCollectionPath = `/artifacts/${appId}/public/data/surveys`;
+                const docRef = await addDoc(collection(db, surveyCollectionPath), surveyData);
+                
+                // Zur Ergebnisansicht weiterleiten
+                window.location.hash = `#results/${docRef.id}`;
+            } catch (error) {
+                console.error("Fehler beim Erstellen der Umfrage:", error);
+                alert("Die Umfrage konnte nicht erstellt werden. Versuchen Sie es erneut.");
+            }
+        });
+
+        // --- Ansicht: Umfrage ausfüllen ---
+
+        async function showSurveyView(surveyId) {
+            views.loading.classList.remove('hidden');
+            try {
+                const surveyDocPath = `/artifacts/${appId}/public/data/surveys/${surveyId}`;
+                const surveyDoc = await getDoc(doc(db, surveyDocPath));
+
+                if (surveyDoc.exists()) {
+                    const survey = surveyDoc.data();
+                    document.getElementById('participant-survey-title').innerText = survey.title;
+                    const form = document.getElementById('survey-form');
+                    form.innerHTML = ''; // Formular leeren
+
+                    survey.questions.forEach(q => {
+                        const questionDiv = document.createElement('div');
+                        questionDiv.className = 'question';
+                        questionDiv.innerHTML = `<h4>${q.text}</h4>`;
+
+                        if (q.type === 'mc') {
+                            q.options.forEach(option => {
+                                questionDiv.innerHTML += `
+                                    <label style="display: block; margin-bottom: 10px;">
+                                        <input type="radio" name="${q.id}" value="${option}" required>
+                                        ${option}
+                                    </label>
+                                `;
+                            });
+                        } else if (q.type === 'text') {
+                            questionDiv.innerHTML += `<textarea name="${q.id}" rows="3" style="width: 100%;" required></textarea>`;
+                        }
+                        form.appendChild(questionDiv);
+                    });
+                    
+                    submitSurveyBtn.onclick = () => submitSurvey(surveyId, survey.questions);
+                    views.loading.classList.add('hidden');
+                    views.survey.classList.remove('hidden');
+
+                } else {
+                    alert("Umfrage nicht gefunden.");
+                    window.location.hash = '';
+                }
+            } catch (error) {
+                console.error("Fehler beim Laden der Umfrage:", error);
+                alert("Die Umfrage konnte nicht geladen werden.");
+            }
+        }
+        
+        async function submitSurvey(surveyId, questions) {
+             const form = document.getElementById('survey-form');
+             if(!form.checkValidity()){
+                form.reportValidity();
+                return;
+             }
+             
+             const formData = new FormData(form);
+             const answers = {};
+             questions.forEach(q => {
+                 answers[q.id] = formData.get(q.id);
+             });
+             
+             try {
+                const responsesCollectionPath = `/artifacts/${appId}/public/data/responses/${surveyId}/answers`;
+                await addDoc(collection(db, responsesCollectionPath), {
+                    answers,
+                    submittedAt: serverTimestamp()
+                });
+                
+                document.querySelector('#survey-view .card').classList.add('hidden');
+                document.getElementById('thank-you-message').classList.remove('hidden');
+
+             } catch(error) {
+                console.error("Fehler beim Senden der Antwort:", error);
+                alert("Ihre Antwort konnte nicht gesendet werden.");
+             }
+        }
+        
+        // --- Ansicht: Live-Ergebnisse ---
+
+        async function showResultsView(surveyId) {
+            // Beenden eines eventuell laufenden alten Listeners
+            if (unsubscribeFromResponses) {
+                unsubscribeFromResponses();
+            }
+
+            views.loading.classList.remove('hidden');
+            try {
+                const surveyDocPath = `/artifacts/${appId}/public/data/surveys/${surveyId}`;
+                const surveyDoc = await getDoc(doc(db, surveyDocPath));
+
+                if (surveyDoc.exists()) {
+                    const survey = surveyDoc.data();
+                    document.getElementById('results-survey-title').innerText = `Live-Ergebnisse: ${survey.title}`;
+                    
+                    // Share-Link und QR-Code erstellen
+                    const link = `${window.location.origin}${window.location.pathname}#survey/${surveyId}`;
+                    document.getElementById('share-link').innerText = link;
+                    
+                    const qrcodeContainer = document.getElementById('qrcode');
+                    qrcodeContainer.innerHTML = '';
+                    new QRCode(qrcodeContainer, {
+                        text: link,
+                        width: 128,
+                        height: 128,
+                    });
+                    
+                    copyLinkBtn.onclick = () => {
+                        navigator.clipboard.writeText(link).then(() => {
+                           copyLinkBtn.innerText = "Kopiert!";
+                           setTimeout(() => { copyLinkBtn.innerText = "Link kopieren"; }, 2000);
+                        });
+                    };
+
+                    exportPdfBtn.onclick = () => exportResultsAsPDF(survey.title);
+                    
+                    // Live-Listener für Antworten einrichten
+                    const responsesCollectionPath = `/artifacts/${appId}/public/data/responses/${surveyId}/answers`;
+                    unsubscribeFromResponses = onSnapshot(collection(db, responsesCollectionPath), (snapshot) => {
+                        const responses = [];
+                        snapshot.forEach(doc => responses.push(doc.data().answers));
+                        renderResults(survey, responses);
+                    });
+
+                    views.loading.classList.add('hidden');
+                    views.results.classList.remove('hidden');
+                } else {
+                    alert("Umfrage nicht gefunden.");
+                    window.location.hash = '';
+                }
+            } catch (error) {
+                console.error("Fehler beim Laden der Ergebnisse:", error);
+                alert("Die Ergebnisse konnten nicht geladen werden.");
+            }
+        }
+        
+        function renderResults(survey, responses){
+            const container = document.getElementById('results-container');
+            container.innerHTML = '';
+            
+            if(responses.length === 0){
+                container.innerHTML = '<div class="loader">Warte auf erste Antworten...</div>';
+                return;
+            }
+
+            survey.questions.forEach(q => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<h3>${q.text}</h3>`;
+                
+                if (q.type === 'mc') {
+                    const results = {};
+                    q.options.forEach(opt => results[opt] = 0);
+                    
+                    responses.forEach(res => {
+                        const answer = res[q.id];
+                        if(answer in results){
+                            results[answer]++;
+                        }
+                    });
+                    
+                    const totalVotes = responses.length;
+                    
+                    q.options.forEach(opt => {
+                       const count = results[opt];
+                       const percentage = totalVotes > 0 ? (count / totalVotes * 100).toFixed(1) : 0;
+                       
+                       card.innerHTML += `
+                            <div>
+                                <strong>${opt}</strong> (${count} Stimme${count !== 1 ? 'n' : ''})
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-bar" style="width: ${percentage}%;">
+                                    ${percentage}%
+                                </div>
+                            </div>
+                       `;
+                    });
+                    
+                } else if (q.type === 'text') {
+                    const answersDiv = document.createElement('div');
+                    responses.forEach(res => {
+                        const answerText = res[q.id];
+                        if (answerText) {
+                            const answerEl = document.createElement('div');
+                            answerEl.className = 'text-answer';
+                            answerEl.textContent = answerText;
+                            answersDiv.appendChild(answerEl);
+                        }
+                    });
+                    card.appendChild(answersDiv);
+                }
+                container.appendChild(card);
+            });
+        }
+        
+        // --- Hilfsfunktionen ---
+        
+        async function exportResultsAsPDF(title) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const resultsContainer = document.getElementById('results-container');
+            
+            // Um Styling-Probleme beim Rendern zu vermeiden
+            const originalWidth = resultsContainer.style.width;
+            resultsContainer.style.width = '800px';
+
+            const canvas = await html2canvas(resultsContainer, {
+                scale: 2, // höhere Auflösung
+                windowWidth: resultsContainer.scrollWidth,
+                windowHeight: resultsContainer.scrollHeight
+            });
+            
+            resultsContainer.style.width = originalWidth;
+
+            const imgData = canvas.toDataURL('image/png');
+            const imgProps= pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            let heightLeft = pdfHeight;
+            let position = 0;
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+              position = heightLeft - pdfHeight;
+              pdf.addPage();
+              pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+              heightLeft -= pageHeight;
+            }
+            
+            pdf.save(`Umfrage-Ergebnisse-${title.replace(/ /g,"_")}.pdf`);
+        }
+
+        // --- App starten ---
+        setupApp(); // Aufruf der umbenannten Funktion
+    </script>
+</body>
+</html>
+
