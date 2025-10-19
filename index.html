@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echtzeit-Feedback-Tool</title>
+    <title>Danke für dein Feedback</title>
     <!-- Einbindung der Bibliotheken für PDF-Export und QR-Code -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -86,6 +86,14 @@
 
         button.danger:hover {
             background-color: #c82333;
+        }
+
+        button.success {
+            background-color: var(--success-color);
+        }
+
+        button.success:hover {
+            background-color: #218838;
         }
 
         input[type="text"], select {
@@ -179,12 +187,86 @@
              margin-bottom: 10px;
              border-radius: 4px;
         }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 20px;
+            line-height: 40px;
+            text-align: center;
+            flex-shrink: 0; /* Verhindert, dass der Button schrumpft */
+        }
+
+        .question-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px; /* Abstand zwischen den Buttons */
+            margin-top: 10px;
+        }
+
+        .templates-container {
+            margin-top: 20px;
+        }
+
+        .templates-toggle {
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .templates-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .templates-list li {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .templates-list li:hover {
+            background-color: #f1f1f1;
+        }
+
+        .active-surveys-container {
+            margin-top: 30px;
+        }
+
+        .active-surveys-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .active-surveys-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .active-surveys-list .survey-title {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Echtzeit-Feedback-Tool</h1>
+        <h1>Danke für dein Feedback</h1>
 
         <!-- Ansicht zum Erstellen der Umfrage -->
         <div id="create-view">
@@ -192,8 +274,27 @@
                 <h2>Neue Umfrage erstellen</h2>
                 <input type="text" id="survey-title" placeholder="Titel der Umfrage">
                 <div id="questions-container"></div>
-                <button id="add-question-btn">Frage hinzufügen</button>
+
+                <!-- Vorlagen Sektion -->
+                <div class="templates-container">
+                    <span class="templates-toggle">Vorhandene Vorlage auswählen ▼</span>
+                    <ul id="templates-list" class="templates-list hidden">
+                        <!-- Vorlagen werden hier dynamisch eingefügt -->
+                    </ul>
+                </div>
+
+                <button id="save-template-btn" class="secondary">Vorlage speichern</button>
+                <button id="load-template-btn" class="secondary">Vorlage laden</button>
+                <input type="file" id="template-file-input" class="hidden" accept=".json">
                 <button id="create-survey-btn" style="float: right;">Umfrage starten</button>
+            </div>
+
+            <!-- Bereich für aktive Umfragen -->
+            <div class="card active-surveys-container">
+                <h2>Aktive Umfragen</h2>
+                <ul id="active-surveys-list" class="active-surveys-list">
+                    <!-- Aktive Umfragen werden hier dynamisch eingefügt -->
+                </ul>
             </div>
         </div>
 
@@ -226,6 +327,7 @@
             </div>
              <div class="card" style="text-align: center;">
                 <button id="export-pdf-btn">Ergebnisse als PDF speichern</button>
+                <button id="delete-survey-btn" class="danger">Umfrage beenden & löschen</button>
              </div>
         </div>
 
@@ -236,31 +338,9 @@
     </div>
 
     <script>
-      // HIER DEINE FIREBASE-KONFIGURATION EINFÜGEN
-      // Ersetze die folgenden Platzhalter durch die Konfigurationswerte deines Firebase-Projekts.
-      // Du findest diese in den Projekteinstellungen deiner Firebase-Konsole.
-      window.firebaseConfig = {
-        apiKey: "DEIN_API_KEY",
-        authDomain: "DEIN_PROJEKT.firebaseapp.com",
-        projectId: "DEIN_PROJEKT_ID",
-        storageBucket: "DEIN_PROJEKT.appspot.com",
-        messagingSenderId: "DEIN_SENDER_ID",
-        appId: "DEINE_APP_ID"
-      };
-    </script>
-
-    <script type="module">
-        // Firebase SDKs importieren
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, addDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // --- Globale Variablen und Konfiguration ---
-
-        const appId = 'default-feedback-app';
-
-        let db, auth;
-        let unsubscribeFromResponses = null; // Funktion zum Beenden des Listeners
+        // --- Globale Variablen ---
+        const API_BASE_URL = 'api/'; // Basis-URL für die PHP-Skripte
+        let pollInterval = null; // Variable für das Polling-Intervall
 
         // --- UI Elemente ---
         const views = {
@@ -274,52 +354,20 @@
         const submitSurveyBtn = document.getElementById('submit-survey-btn');
         const copyLinkBtn = document.getElementById('copy-link-btn');
         const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const deleteSurveyBtn = document.getElementById('delete-survey-btn');
+        const saveTemplateBtn = document.getElementById('save-template-btn');
+        const loadTemplateBtn = document.getElementById('load-template-btn');
+        const templateFileInput = document.getElementById('template-file-input');
+        const templatesToggle = document.querySelector('.templates-toggle');
+        const templatesList = document.getElementById('templates-list');
+        const activeSurveysList = document.getElementById('active-surveys-list');
 
-        // --- App Initialisierung ---
-
-        async function setupApp() { // Umbenannt von initializeApp, um Konflikte zu vermeiden
-            // Überprüfen, ob die Firebase-Konfiguration ausgefüllt wurde
-            if (!window.firebaseConfig || window.firebaseConfig.apiKey === "DEIN_API_KEY") {
-                alert("WICHTIG: Bitte fügen Sie Ihre Firebase-Konfiguration in der index.html-Datei ein, um die Anwendung zu nutzen.");
-                console.error("Firebase-Konfiguration fehlt oder ist unvollständig.");
-
-                // Ansichten anpassen, um den Fehler anzuzeigen
-                hideAllViews();
-                views.loading.classList.remove('hidden');
-                views.loading.innerHTML = `
-                    <div class="card" style="border-top: 4px solid var(--danger-color);">
-                        <h2>Konfigurationsfehler</h2>
-                        <p>Die Anwendung konnte nicht initialisiert werden, da die Firebase-Konfiguration fehlt oder unvollständig ist.</p>
-                        <p><strong>So beheben Sie das Problem:</strong></p>
-                        <ol style="text-align: left;">
-                            <li>Öffnen Sie die <code>index.html</code>-Datei in einem Texteditor.</li>
-                            <li>Suchen Sie nach dem <code>&lt;script&gt;</code>-Block mit dem Kommentar "HIER DEINE FIREBASE-KONFIGURATION EINFÜGEN".</li>
-                            <li>Ersetzen Sie die Platzhalterwerte (z.B. "DEIN_API_KEY") durch die echten Daten aus Ihrem Firebase-Projekt.</li>
-                            <li>Speichern Sie die Datei und laden Sie die Seite neu.</li>
-                        </ol>
-                    </div>
-                `;
-                return;
-            }
-
-            try {
-                const app = initializeApp(window.firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                await signInAnonymously(auth);
-                console.log("Anonyme Anmeldung erfolgreich.");
-                handleRouting();
-            } catch (error) {
-                console.error("Firebase Initialisierung fehlgeschlagen:", error);
-                alert("Fehler bei der Verbindung zum Service. Bitte laden Sie die Seite neu. Überprüfen Sie auch Ihre Firebase-Konfiguration.");
-            }
-        }
-
-        // --- Routing ---
+        // --- App Initialisierung & Routing ---
 
         function handleRouting() {
             const hash = window.location.hash;
             hideAllViews();
+            if (pollInterval) clearInterval(pollInterval); // Polling stoppen bei Ansichtswechsel
 
             if (hash.startsWith('#results/')) {
                 const surveyId = hash.split('/')[1];
@@ -344,8 +392,88 @@
 
         function showCreateView() {
             views.create.classList.remove('hidden');
-            addQuestion(); // Direkt eine erste Frage hinzufügen
+            if (questionCount === 0) { // Nur hinzufügen, wenn noch keine Fragen da sind
+                 addQuestion();
+            }
+            loadAndDisplayTemplates();
+            loadAndDisplayActiveSurveys();
         }
+
+        async function loadAndDisplayActiveSurveys() {
+            try {
+                const response = await fetch(API_BASE_URL + 'list_active_surveys.php');
+                const surveys = await response.json();
+
+                activeSurveysList.innerHTML = ''; // Liste leeren
+                if (surveys.length === 0) {
+                    activeSurveysList.innerHTML = '<li>Derzeit sind keine Umfragen aktiv.</li>';
+                    return;
+                }
+
+                surveys.forEach(survey => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="survey-title">${survey.title}</span>
+                        <div>
+                            <button type="button" data-survey-id="${survey.id}" class="clone-survey-btn secondary icon-btn">📋</button>
+                            <button type="button" data-survey-id="${survey.id}" class="view-results-btn success icon-btn">▶️</button>
+                            <button type="button" data-survey-id="${survey.id}" class="delete-active-survey-btn danger icon-btn">🗑️</button>
+                        </div>
+                    `;
+
+                    li.querySelector('.delete-active-survey-btn').addEventListener('click', async (event) => {
+                        const surveyId = event.currentTarget.dataset.surveyId;
+                        await deleteSurvey(surveyId, true);
+                        loadAndDisplayActiveSurveys();
+                    });
+
+                    li.querySelector('.view-results-btn').addEventListener('click', (event) => {
+                        const surveyId = event.currentTarget.dataset.surveyId;
+                        window.location.hash = `#results/${surveyId}`;
+                    });
+
+                    li.querySelector('.clone-survey-btn').addEventListener('click', (event) => {
+                        const surveyId = event.currentTarget.dataset.surveyId;
+                        cloneSurvey(surveyId);
+                    });
+
+                    activeSurveysList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Fehler beim Laden der aktiven Umfragen:", error);
+                activeSurveysList.innerHTML = '<li>Fehler beim Laden der Umfragen.</li>';
+            }
+        }
+
+        async function loadAndDisplayTemplates() {
+            try {
+                const response = await fetch(API_BASE_URL + 'list_templates.php');
+                const templateNames = await response.json();
+
+                templatesList.innerHTML = ''; // Liste leeren
+                if (templateNames.length === 0) {
+                    templatesList.innerHTML = '<li>Keine Vorlagen gefunden.</li>';
+                    return;
+                }
+
+                templateNames.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    li.dataset.id = name;
+                    li.addEventListener('click', () => loadServerTemplate(name));
+                    templatesList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Fehler beim Laden der Vorlagen:", error);
+                templatesList.innerHTML = '<li>Fehler beim Laden.</li>';
+            }
+        }
+
+        templatesToggle.addEventListener('click', () => {
+            templatesList.classList.toggle('hidden');
+            const icon = templatesList.classList.contains('hidden') ? '▼' : '▲';
+            templatesToggle.textContent = `Vorhandene Vorlage auswählen ${icon}`;
+        });
 
         function addQuestion() {
             questionCount++;
@@ -369,10 +497,17 @@
                         <input type="text" class="option-text" placeholder="Antwortmöglichkeit 2">
                      </div>
                 </div>
-                <button type="button" class="add-option-btn secondary">Weitere Option</button>
-                <button type="button" class="remove-question-btn danger" style="float: right;">Frage entfernen</button>
+                <button type="button" class="add-option-btn secondary icon-btn">+</button>
+                <div class="question-actions">
+                    <button type="button" class="add-sibling-question-btn success icon-btn">+</button>
+                    <button type="button" class="remove-question-btn danger icon-btn">🗑️</button>
+                </div>
             `;
             container.appendChild(questionBlock);
+
+            questionBlock.querySelector('.add-sibling-question-btn').addEventListener('click', () => {
+                addQuestion();
+            });
 
             questionBlock.querySelector('.question-type').addEventListener('change', (e) => {
                 const optionsDiv = questionBlock.querySelector('.options-container');
@@ -402,7 +537,7 @@
             newOption.className = 'option-input';
             newOption.innerHTML = `
                 <input type="text" class="option-text" placeholder="Antwortmöglichkeit ${optionCount}">
-                <button type="button" class="remove-option-btn danger">-</button>
+                <button type="button" class="remove-option-btn danger icon-btn">-</button>
             `;
             optionsContainer.appendChild(newOption);
             newOption.querySelector('.remove-option-btn').addEventListener('click', () => {
@@ -410,7 +545,142 @@
             });
         }
 
-        addQuestionBtn.addEventListener('click', addQuestion);
+        async function cloneSurvey(surveyId) {
+            try {
+                // Wir verwenden denselben Endpunkt, der auch zum Ausfüllen der Umfrage für Teilnehmer dient
+                const response = await fetch(`${API_BASE_URL}get_survey.php?id=${surveyId}`);
+                if (!response.ok) throw new Error(`Serverfehler: ${response.statusText}`);
+                const data = await response.json();
+
+                // Wir benennen den Titel um, um klarzustellen, dass es eine Kopie ist
+                data.title = `Kopie von: ${data.title}`;
+
+                populateFormWithTemplate(data);
+
+                // Scrollen Sie zum Anfang der Seite, um das ausgefüllte Formular zu sehen
+                window.scrollTo(0, 0);
+                alert("Die Umfrage wurde als neue Vorlage in das Formular geladen. Sie können sie jetzt bearbeiten und als neue Umfrage starten.");
+            } catch (error) {
+                alert('Fehler beim Klonen der Umfrage: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        // --- Vorlagen-Funktionen ---
+
+        async function loadServerTemplate(templateId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}get_template.php?id=${templateId}`);
+                if (!response.ok) throw new Error(`Serverfehler: ${response.statusText}`);
+                const data = await response.json();
+                populateFormWithTemplate(data);
+                // Schließe die Liste nach der Auswahl
+                templatesList.classList.add('hidden');
+                templatesToggle.textContent = 'Vorhandene Vorlage auswählen ▼';
+            } catch (error) {
+                alert('Fehler beim Laden der Vorlage: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        function getSurveyDataFromForm() {
+            const title = document.getElementById('survey-title').value.trim();
+            const questions = [];
+            const questionBlocks = document.querySelectorAll('.question-block');
+
+            for (const block of questionBlocks) {
+                const text = block.querySelector('.question-text').value.trim();
+                const type = block.querySelector('.question-type').value;
+                if (!text) continue; // Leere Fragen ignorieren
+
+                const question = { text, type, options: [] };
+
+                if (type === 'mc') {
+                    const optionInputs = block.querySelectorAll('.option-text');
+                    optionInputs.forEach(input => {
+                        const optionText = input.value.trim();
+                        if (optionText) {
+                            question.options.push(optionText);
+                        }
+                    });
+                }
+                questions.push(question);
+            }
+            return { title, questions };
+        }
+
+        function saveTemplate() {
+            const surveyData = getSurveyDataFromForm();
+            if (!surveyData.title && surveyData.questions.length === 0) {
+                alert("Es gibt nichts zu speichern. Fügen Sie bitte einen Titel oder Fragen hinzu.");
+                return;
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(surveyData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            const fileName = surveyData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'umfrage_vorlage';
+            downloadAnchorNode.setAttribute("download", `${fileName}.json`);
+            document.body.appendChild(downloadAnchorNode); // Erforderlich für Firefox
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        saveTemplateBtn.addEventListener('click', saveTemplate);
+
+        function populateFormWithTemplate(data) {
+             if (!data.questions) throw new Error("Ungültiges Format");
+
+            // Formular zurücksetzen
+            document.getElementById('survey-title').value = data.title || '';
+            const questionsContainer = document.getElementById('questions-container');
+            questionsContainer.innerHTML = '';
+            questionCount = 0;
+
+            // Formular mit neuen Daten aufbauen
+            data.questions.forEach(q => {
+                addQuestion(); // Erstellt einen neuen, leeren Fragenblock
+                const newBlock = document.getElementById(`question-${questionCount}`);
+                newBlock.querySelector('.question-text').value = q.text;
+                const questionTypeSelect = newBlock.querySelector('.question-type');
+                questionTypeSelect.value = q.type;
+
+                // Event manuell auslösen, um Optionscontainer bei 'text' auszublenden
+                questionTypeSelect.dispatchEvent(new Event('change'));
+
+                if (q.type === 'mc' && q.options) {
+                    const optionsContainer = newBlock.querySelector('.options-container');
+                    optionsContainer.innerHTML = ''; // Standard-Optionen entfernen
+                    q.options.forEach(opt => {
+                        addOption(newBlock);
+                        const optionInputs = optionsContainer.querySelectorAll('.option-text');
+                        optionInputs[optionInputs.length - 1].value = opt;
+                    });
+                }
+            });
+        }
+
+        function loadTemplateFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    populateFormWithTemplate(data);
+                } catch (error) {
+                    alert('Fehler beim Laden der Vorlage: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+
+            // Input zurücksetzen, damit dieselbe Datei erneut geladen werden kann
+            event.target.value = '';
+        }
+
+        loadTemplateBtn.addEventListener('click', () => templateFileInput.click());
+        templateFileInput.addEventListener('change', loadTemplateFromFile);
 
         createSurveyBtn.addEventListener('click', async () => {
             const title = document.getElementById('survey-title').value.trim();
@@ -455,20 +725,20 @@
             }
 
             try {
-                // Umfrage in Firestore speichern
-                const surveyData = {
-                    title,
-                    questions,
-                    createdAt: serverTimestamp()
-                };
-                const surveyCollectionPath = `/artifacts/${appId}/public/data/surveys`;
-                const docRef = await addDoc(collection(db, surveyCollectionPath), surveyData);
-
-                // Zur Ergebnisansicht weiterleiten
-                window.location.hash = `#results/${docRef.id}`;
+                const response = await fetch(API_BASE_URL + 'create_survey.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, questions })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    window.location.hash = `#results/${result.surveyId}`;
+                } else {
+                    throw new Error(result.message || 'Unbekannter Fehler');
+                }
             } catch (error) {
                 console.error("Fehler beim Erstellen der Umfrage:", error);
-                alert("Die Umfrage konnte nicht erstellt werden. Versuchen Sie es erneut.");
+                alert("Die Umfrage konnte nicht erstellt werden: " + error.message);
             }
         });
 
@@ -477,52 +747,49 @@
         async function showSurveyView(surveyId) {
             views.loading.classList.remove('hidden');
             try {
-                const surveyDocPath = `/artifacts/${appId}/public/data/surveys/${surveyId}`;
-                const surveyDoc = await getDoc(doc(db, surveyDocPath));
+                const response = await fetch(`${API_BASE_URL}get_survey.php?id=${surveyId}`);
+                const survey = await response.json();
 
-                if (surveyDoc.exists()) {
-                    const survey = surveyDoc.data();
-                    document.getElementById('participant-survey-title').innerText = survey.title;
-                    const form = document.getElementById('survey-form');
-                    form.innerHTML = ''; // Formular leeren
+                if (survey.error) throw new Error(survey.error);
 
-                    survey.questions.forEach(q => {
-                        const questionDiv = document.createElement('div');
-                        questionDiv.className = 'question';
-                        questionDiv.innerHTML = `<h4>${q.text}</h4>`;
+                document.getElementById('participant-survey-title').innerText = survey.title;
+                const form = document.getElementById('survey-form');
+                form.innerHTML = '';
 
-                        if (q.type === 'mc') {
-                            q.options.forEach(option => {
-                                questionDiv.innerHTML += `
-                                    <label style="display: block; margin-bottom: 10px;">
-                                        <input type="radio" name="${q.id}" value="${option}" required>
-                                        ${option}
-                                    </label>
-                                `;
-                            });
-                        } else if (q.type === 'text') {
-                            questionDiv.innerHTML += `<textarea name="${q.id}" rows="3" style="width: 100%;" required></textarea>`;
-                        }
-                        form.appendChild(questionDiv);
-                    });
+                survey.questions.forEach(q => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'question';
+                    questionDiv.innerHTML = `<h4>${q.text}</h4>`;
 
-                    submitSurveyBtn.onclick = () => submitSurvey(surveyId, survey.questions);
-                    views.loading.classList.add('hidden');
-                    views.survey.classList.remove('hidden');
+                    if (q.type === 'mc') {
+                        q.options.forEach(option => {
+                            questionDiv.innerHTML += `
+                                <label style="display: block; margin-bottom: 10px;">
+                                    <input type="radio" name="${q.id}" value="${option}" required>
+                                    ${option}
+                                </label>
+                            `;
+                        });
+                    } else if (q.type === 'text') {
+                        questionDiv.innerHTML += `<textarea name="${q.id}" rows="3" style="width: 100%;" required></textarea>`;
+                    }
+                    form.appendChild(questionDiv);
+                });
 
-                } else {
-                    alert("Umfrage nicht gefunden.");
-                    window.location.hash = '';
-                }
+                submitSurveyBtn.onclick = () => submitSurvey(surveyId, survey.questions);
+                views.loading.classList.add('hidden');
+                views.survey.classList.remove('hidden');
+
             } catch (error) {
                 console.error("Fehler beim Laden der Umfrage:", error);
                 alert("Die Umfrage konnte nicht geladen werden.");
+                window.location.hash = '';
             }
         }
 
         async function submitSurvey(surveyId, questions) {
              const form = document.getElementById('survey-form');
-             if(!form.checkValidity()){
+             if(!form.checkValidity()) {
                 form.reportValidity();
                 return;
              }
@@ -534,77 +801,99 @@
              });
 
              try {
-                const responsesCollectionPath = `/artifacts/${appId}/public/data/responses/${surveyId}/answers`;
-                await addDoc(collection(db, responsesCollectionPath), {
-                    answers,
-                    submittedAt: serverTimestamp()
+                const response = await fetch(API_BASE_URL + 'submit_answer.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ surveyId, answers })
                 });
+                const result = await response.json();
+
+                if (!result.success) throw new Error(result.message);
 
                 document.querySelector('#survey-view .card').classList.add('hidden');
                 document.getElementById('thank-you-message').classList.remove('hidden');
-
              } catch(error) {
                 console.error("Fehler beim Senden der Antwort:", error);
-                alert("Ihre Antwort konnte nicht gesendet werden.");
+                alert("Ihre Antwort konnte nicht gesendet werden: " + error.message);
              }
         }
 
         // --- Ansicht: Live-Ergebnisse ---
 
-        async function showResultsView(surveyId) {
-            // Beenden eines eventuell laufenden alten Listeners
-            if (unsubscribeFromResponses) {
-                unsubscribeFromResponses();
+        async function deleteSurvey(surveyId, _isSilent = false) {
+            const confirmation = confirm("Möchten Sie diese Umfrage wirklich endgültig beenden und alle zugehörigen Daten löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.");
+            if (!confirmation) {
+                return;
             }
 
-            views.loading.classList.remove('hidden');
             try {
-                const surveyDocPath = `/artifacts/${appId}/public/data/surveys/${surveyId}`;
-                const surveyDoc = await getDoc(doc(db, surveyDocPath));
+                const response = await fetch(API_BASE_URL + 'delete_survey.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ surveyId: surveyId })
+                });
 
-                if (surveyDoc.exists()) {
-                    const survey = surveyDoc.data();
-                    document.getElementById('results-survey-title').innerText = `Live-Ergebnisse: ${survey.title}`;
+                const result = await response.json();
 
-                    // Share-Link und QR-Code erstellen
-                    const link = `${window.location.origin}${window.location.pathname}#survey/${surveyId}`;
-                    document.getElementById('share-link').innerText = link;
+                if (result.success) {
+                    if (!_isSilent) {
+                        alert("Umfrage erfolgreich gelöscht.");
+                        if (pollInterval) clearInterval(pollInterval);
+                        window.location.hash = ''; // Zurück zur Startseite
+                    }
+                } else {
+                    throw new Error(result.message || 'Unbekannter Fehler beim Löschen.');
+                }
+            } catch (error) {
+                alert("Fehler: " + error.message);
+                console.error("Fehler beim Löschen der Umfrage:", error);
+            }
+        }
 
-                    const qrcodeContainer = document.getElementById('qrcode');
-                    qrcodeContainer.innerHTML = '';
-                    new QRCode(qrcodeContainer, {
-                        text: link,
-                        width: 128,
-                        height: 128,
-                    });
+        async function showResultsView(surveyId) {
+            views.loading.classList.remove('hidden');
 
-                    copyLinkBtn.onclick = () => {
-                        navigator.clipboard.writeText(link).then(() => {
-                           copyLinkBtn.innerText = "Kopiert!";
-                           setTimeout(() => { copyLinkBtn.innerText = "Link kopieren"; }, 2000);
-                        });
-                    };
+            const link = `${window.location.origin}${window.location.pathname}#survey/${surveyId}`;
+            document.getElementById('share-link').innerText = link;
 
-                    exportPdfBtn.onclick = () => exportResultsAsPDF(survey.title);
+            const qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+            new QRCode(qrcodeContainer, { text: link, width: 256, height: 256 });
 
-                    // Live-Listener für Antworten einrichten
-                    const responsesCollectionPath = `/artifacts/${appId}/public/data/responses/${surveyId}/answers`;
-                    unsubscribeFromResponses = onSnapshot(collection(db, responsesCollectionPath), (snapshot) => {
-                        const responses = [];
-                        snapshot.forEach(doc => responses.push(doc.data().answers));
-                        renderResults(survey, responses);
-                    });
+            copyLinkBtn.onclick = () => {
+                navigator.clipboard.writeText(link).then(() => {
+                   copyLinkBtn.innerText = "Kopiert!";
+                   setTimeout(() => { copyLinkBtn.innerText = "Link kopieren"; }, 2000);
+                });
+            };
+
+            const fetchAndRenderResults = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}get_results.php?id=${surveyId}`);
+                    const data = await response.json();
+
+                    if (data.error) throw new Error(data.error);
+
+                    if (document.getElementById('results-survey-title').innerText === 'Live-Ergebnisse') {
+                         document.getElementById('results-survey-title').innerText = `Live-Ergebnisse: ${data.survey.title}`;
+                         exportPdfBtn.onclick = () => exportResultsAsPDF(data.survey.title);
+                         deleteSurveyBtn.onclick = () => deleteSurvey(surveyId);
+                    }
+
+                    renderResults(data.survey, data.responses);
 
                     views.loading.classList.add('hidden');
                     views.results.classList.remove('hidden');
-                } else {
-                    alert("Umfrage nicht gefunden.");
+                } catch (error) {
+                    console.error("Fehler beim Laden der Ergebnisse:", error);
+                    alert("Die Ergebnisse konnten nicht geladen werden.");
+                    if(pollInterval) clearInterval(pollInterval);
                     window.location.hash = '';
                 }
-            } catch (error) {
-                console.error("Fehler beim Laden der Ergebnisse:", error);
-                alert("Die Ergebnisse konnten nicht geladen werden.");
-            }
+            };
+
+            await fetchAndRenderResults(); // Initialer Aufruf
+            pollInterval = setInterval(fetchAndRenderResults, 5000); // Alle 5 Sekunden pollen
         }
 
         function renderResults(survey, responses){
@@ -625,14 +914,14 @@
                     const results = {};
                     q.options.forEach(opt => results[opt] = 0);
 
+                    let totalVotes = 0;
                     responses.forEach(res => {
-                        const answer = res[q.id];
+                        const answer = res.answers[q.id];
                         if(answer in results){
                             results[answer]++;
+                            totalVotes++;
                         }
                     });
-
-                    const totalVotes = responses.length;
 
                     q.options.forEach(opt => {
                        const count = results[opt];
@@ -644,7 +933,7 @@
                             </div>
                             <div class="result-bar-container">
                                 <div class="result-bar" style="width: ${percentage}%;">
-                                    ${percentage}%
+                                    ${percentage > 5 ? (percentage + '%') : ''}
                                 </div>
                             </div>
                        `;
@@ -653,7 +942,7 @@
                 } else if (q.type === 'text') {
                     const answersDiv = document.createElement('div');
                     responses.forEach(res => {
-                        const answerText = res[q.id];
+                        const answerText = res.answers[q.id];
                         if (answerText) {
                             const answerEl = document.createElement('div');
                             answerEl.className = 'text-answer';
@@ -671,45 +960,42 @@
 
         async function exportResultsAsPDF(title) {
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const resultsContainer = document.getElementById('results-container');
-
-            // Um Styling-Probleme beim Rendern zu vermeiden
-            const originalWidth = resultsContainer.style.width;
-            resultsContainer.style.width = '800px';
-
-            const canvas = await html2canvas(resultsContainer, {
-                scale: 2, // höhere Auflösung
-                windowWidth: resultsContainer.scrollWidth,
-                windowHeight: resultsContainer.scrollHeight
-            });
-
-            resultsContainer.style.width = originalWidth;
-
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps= pdf.getImageProperties(imgData);
+            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            const resultCards = document.querySelectorAll('#results-container .card');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-            let heightLeft = pdfHeight;
-            let position = 0;
             const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+            let yPosition = margin;
 
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pageHeight;
+            // Titel hinzufügen
+            pdf.setFontSize(18);
+            const splitTitle = pdf.splitTextToSize(title, pdfWidth - margin * 2);
+            pdf.text(splitTitle, margin, yPosition);
+            yPosition += (splitTitle.length * 10) + 10; // Platz nach dem Titel
 
-            while (heightLeft > 0) {
-              position = heightLeft - pdfHeight;
-              pdf.addPage();
-              pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-              heightLeft -= pageHeight;
+            // Jede Ergebnis-Karte einzeln verarbeiten
+            for (const card of resultCards) {
+                const canvas = await html2canvas(card, { scale: 1.5 });
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgHeight = (imgProps.height * (pdfWidth - margin * 2)) / imgProps.width;
+
+                // Prüfen, ob die Karte auf die aktuelle Seite passt
+                if (yPosition + imgHeight > pageHeight - margin) {
+                    pdf.addPage();
+                    yPosition = margin; // Position auf der neuen Seite zurücksetzen
+                }
+
+                pdf.addImage(imgData, 'JPEG', margin, yPosition, pdfWidth - margin * 2, imgHeight);
+                yPosition += imgHeight + 5; // Nächste Position + kleiner Abstand
             }
 
             pdf.save(`Umfrage-Ergebnisse-${title.replace(/ /g,"_")}.pdf`);
         }
 
         // --- App starten ---
-        setupApp(); // Aufruf der umbenannten Funktion
+        document.addEventListener('DOMContentLoaded', handleRouting);
     </script>
 </body>
 </html>
