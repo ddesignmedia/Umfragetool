@@ -724,11 +724,17 @@
                 questions.push(question);
             }
             
+            const token = prompt("Bitte geben Sie den geheimen Erstellungs-Token ein, um die Umfrage zu starten:");
+            if (!token) {
+                alert("Erstellung abgebrochen. Kein Token eingegeben.");
+                return;
+            }
+
             try {
                 const response = await fetch(API_BASE_URL + 'create_survey.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, questions })
+                    body: JSON.stringify({ title, questions, token: token })
                 });
                 const result = await response.json();
                 if (result.success) {
@@ -826,11 +832,21 @@
                 return;
             }
 
+            // Fordern Sie den Benutzer zur Eingabe des Tokens auf
+            const token = prompt("Bitte geben Sie den geheimen Lösch-Token ein, um fortzufahren:");
+            if (!token) {
+                // Benutzer hat Abbrechen gedrückt oder nichts eingegeben
+                if (!_isSilent) {
+                    alert("Löschvorgang abgebrochen. Kein Token eingegeben.");
+                }
+                return;
+            }
+
             try {
                 const response = await fetch(API_BASE_URL + 'delete_survey.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ surveyId: surveyId })
+                    body: JSON.stringify({ surveyId: surveyId, token: token })
                 });
                 
                 const result = await response.json();

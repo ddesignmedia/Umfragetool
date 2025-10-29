@@ -4,6 +4,9 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+require_once __DIR__ . '/rate_limiter.php';
+checkRateLimit('submit_answer');
+
 $dataDir = __DIR__ . '/data';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,11 +43,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         fclose($fileHandleRead);
     }
 
+    // Die empfangenen Antworten serverseitig bereinigen, um XSS zu verhindern
+    $sanitizedAnswers = [];
+    if (is_array($data['answers'])) {
+        foreach ($data['answers'] as $questionId => $answer) {
+            // Bereinige jede Antwort, egal ob Text oder Multiple-Choice-Wert
+            $sanitizedAnswers[$questionId] = is_string($answer)
+                ? htmlspecialchars($answer, ENT_QUOTES, 'UTF-8')
+                : $answer; // Behalte Nicht-Strings bei (sollte nicht vorkommen)
+        }
+    }
+
     // Neue Antwort hinzufügen
     $newResponse = [
         'responseId' => bin2hex(random_bytes(8)),
         'submittedAt' => date(DATE_ISO8601),
-        'answers' => $data['answers']
+        'answers' => $sanitizedAnswers // Verwende die bereinigten Antworten
     ];
     $responses[] = $newResponse;
 
