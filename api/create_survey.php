@@ -81,11 +81,9 @@ function isValidSurveyData($data) {
 
     foreach ($data['questions'] as $question) {
         if (!isset($question['text']) || !is_string($question['text']) || trim($question['text']) === '') return false;
-        // Anpassung: Akzeptiert 'mc' für Multiple-Choice, wie vom Frontend gesendet
-        if (!isset($question['type']) || !in_array($question['type'], ['mc', 'text'])) return false;
+        if (!isset($question['type']) || !in_array($question['type'], ['mc', 'mca', 'text'])) return false;
         
-        // Anpassung: Prüft auf 'mc' für die Optionsvalidierung
-        if ($question['type'] === 'mc') {
+        if ($question['type'] === 'mc' || $question['type'] === 'mca') {
             if (!isset($question['options']) || !is_array($question['options']) || count($question['options']) < 2) return false;
             foreach ($question['options'] as $option) {
                 if (!is_string($option) || trim($option) === '') return false;
