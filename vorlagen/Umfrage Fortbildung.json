@@ -1,0 +1,110 @@
+{
+  "title": "Feedback zur Fortbildung/Workshop",
+  "questions": [
+    {
+      "text": "Wie bewerten Sie den Mehrwert der gezeigten Inhalte für Ihren eigenen Unterricht?",
+      "type": "mc",
+      "options": [
+        "1 (Sehr geringer Mehrwert)",
+        "2",
+        "3 (Neutral)",
+        "4",
+        "5 (Sehr hoher Mehrwert)"
+      ]
+    },
+    {
+      "text": "Wie motiviert fühlen Sie sich, das Gezeigte zeitnah in Ihrem Unterricht umzusetzen?",
+      "type": "mc",
+      "options": [
+        "1 (Gar nicht motiviert)",
+        "2",
+        "3 (Teils/teils)",
+        "4",
+        "5 (Sehr motiviert)"
+      ]
+    },
+    {
+      "text": "Inwieweit entsprachen die Inhalte Ihren Erwartungen?",
+      "type": "mc",
+      "options": [
+        "1 (Überhaupt nicht)",
+        "2",
+        "3 (Teils/teils)",
+        "4",
+        "5 (Voll und ganz)"
+      ]
+    },
+    {
+      "text": "Wie verständlich und klar war der Workshop/Vortrag strukturiert und präsentiert?",
+      "type": "mc",
+      "options": [
+        "1 (Sehr unverständlich)",
+        "2",
+        "3 (Neutral)",
+        "4",
+        "5 (Sehr verständlich)"
+      ]
+    },
+    {
+      "text": "Wie verständlich fanden Sie die Ausführungen des Referenten?",
+      "type": "mc",
+      "options": [
+        "1 (Sehr unverständlich)",
+        "2",
+        "3 (Eingermaßen)",
+        "4",
+        "5 (Sehr verständlich)"
+      ]
+    },
+    {
+      "text": "Wie empfanden Sie das Tempo der Veranstaltung?",
+      "type": "mc",
+      "options": [
+        "1 (Viel zu langsam)",
+        "2",
+        "3 (Genau richtig)",
+        "4",
+        "5 (Viel zu schnell)"
+      ]
+    },
+	
+	  {
+      "text": "Wie empfanden Sie die Vortragsart des Referenten?",
+      "type": "mc",
+      "options": [
+        "1 (total lahm)",
+        "2 (etwas langweilig)",
+        "3 (unauffällig)",
+        "4 (ganz angenehm)",
+        "5 (motiviert)"
+      ]
+    },
+	
+    {
+      "text": "Wie zufrieden sind Sie insgesamt mit dieser Fortbildung?",
+      "type": "mc",
+      "options": [
+        "1 (Sehr unzufrieden)",
+        "2",
+        "3 (Neutral)",
+        "4",
+        "5 (Sehr zufrieden)"
+      ]
+    },
+    {
+      "text": "Was war für Sie der wichtigste oder hilfreichste Aspekt (Take-Home-Message) der heutigen Veranstaltung?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Welche Themen oder Aspekte kamen Ihnen zu kurz oder haben Sie vermisst?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Welche Wünsche oder Anregungen haben Sie für zukünftige Fortbildungen dieser Art?",
+      "type": "text",
+      "options": []
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "title": "Umfrage zur KI-Nutzung (8. Klasse)",
+  "questions": [
+    {
+      "text": "Wie oft nutzt du KI-Tools?",
+      "type": "mc",
+      "options": [
+        "Mehrmals täglich",
+        "Etwa einmal pro Tag",
+        "Mehrmals pro Woche",
+        "Seltener oder fast nie",
+        "Ich weiß nicht, was das ist"
+      ]
+    },
+    {
+      "text": "Welches KI-Tool nutzt du am häufigsten?",
+      "type": "mca",
+      "options": [
+        "ChatGPT",
+        "Snapchat oder Meta AI",
+        "DeepSeek",
+		"GROK", 
+        "Gemini",
+        "Ich nutze keine KI"
+      ]
+    },
+    {
+      "text": "Wofür nutzt du KI hauptsächlich?",
+      "type": "mca",
+      "options": [
+        "Für die Hausaufgaben",
+        "Zum Lernen z.B. Vorbereitung auf Prüfungen",
+        "Um Fragen zu stellen (statt Google)",
+        "Nur zum Chatten (wie mit einem Freund)",
+        "Ich nutze keine KI"
+      ]
+    },
+    {
+      "text": "Wie gut findest du deine eigenen Fähigkeiten (Skills) im Umgang mit KI?",
+      "type": "mc",
+      "options": [
+        "1 (Ich hab keinen Plan)",
+        "2",
+        "3 (Geht so / Mittelmäßig)",
+        "4",
+        "5 (Ich bin schon fast ein Profi)"
+      ]
+    },
+    {
+      "text": "Nutzen deine Lehrerinnen und Lehrer KI im Unterricht (z.B. zeigen sie Beispiele)?",
+      "type": "mc",
+      "options": [
+        "Ja, total oft",
+        "Manchmal",
+        "Selten",
+        "Nein, nie"
+      ]
+    },
+    {
+      "text": "Motivieren (ermutigen) dich deine Lehrer, KI für die Schule zu nutzen?",
+      "type": "mc",
+      "options": [
+        "Ja, auf jeden Fall",
+        "Manchmal, wenn es passt",
+        "Eher nicht",
+        "Nein, sie verbieten es eher"
+      ]
+    },
+    {
+      "text": "Wie gut schätzt du die KI-Skills deiner Lehrerinnen und Lehrer ein?",
+      "type": "mc",
+      "options": [
+        "1 (Keine Ahnung von KI)",
+        "2",
+        "3 (Kennen die Grundlagen)",
+        "4",
+        "5 (Sind echte Experten)"
+      ]
+    },
+    {
+      "text": "Findest du, KI sollte in der Schule öfter genutzt werden?",
+      "type": "mc",
+      "options": [
+        "Ja, viel öfter!",
+        "Ja, aber nur in bestimmten Fächern",
+        "Nein, passt so wie es ist",
+        "Nein, lieber weniger KI"
+      ]
+    },
+    {
+      "text": "Welche Frage zu KI hast du, die wir im Workshop unbedingt besprechen sollen?",
+      "type": "text",
+      "options": []
+    }
+  ]
+}

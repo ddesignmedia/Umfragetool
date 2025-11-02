@@ -1,0 +1,92 @@
+{
+  "title": "Feedback zur Veranstaltung",
+  "questions": [
+    {
+      "text": "Wie relevant waren die vorgestellten Inhalte für Ihre tägliche Unterrichtspraxis?",
+      "type": "mc",
+      "options": [
+        "1 (gar nicht relevant)",
+        "2",
+        "3",
+        "4",
+        "5 (sehr relevant)"
+      ]
+    },
+    {
+      "text": "Wie verständlich und klar wurden die Inhalte präsentiert?",
+      "type": "mc",
+      "options": [
+        "1 (unverständlich)",
+        "2",
+        "3",
+        "4",
+        "5 (absolut klar)"
+      ]
+    },
+    {
+      "text": "Wie zuversichtlich sind Sie nach dem Workshop, die vorgestellten Methoden/Inhalte in Ihrem eigenen Unterricht umsetzen zu können?",
+      "type": "mc",
+      "options": [
+        "1 (gar nicht)",
+        "2",
+        "3",
+        "4",
+        "5 (absolut sicher)"
+      ]
+    },
+    {
+      "text": "Was ist der EINE zentrale Gedanke oder die EINE Methode, die Sie aus diesem Workshop mitnehmen werden?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Was würde Ihnen jetzt am meisten helfen, das Gelernte erfolgreich im Unterricht einzusetzen?",
+      "type": "mc",
+      "options": [
+        "Konkrete Unterrichtsmaterialien / Vorlagen",
+        "Technischer Support",
+        "Austausch mit Kolleg*innen",
+        "Zeit für die Vorbereitung"
+      ]
+    },
+    {
+      "text": "Das Tempo des Workshops war für mich...",
+      "type": "mc",
+      "options": [
+        "1 (deutlich zu langsam)",
+        "2",
+        "3 (genau richtig)",
+        "4",
+        "5 (deutlich zu schnell)"
+      ]
+    },
+    {
+      "text": "Wie bewerten Sie den Workshop insgesamt?",
+      "type": "mc",
+      "options": [
+        "Note 1",
+        "Note 2",
+        "Note 3",
+        "Note 4",
+        "Note 5",
+        "Note 6"
+      ]
+    },
+    {
+      "text": "Wie wahrscheinlich ist es, dass Sie diesen Workshop einer Kollegin oder einem Kollegen weiterempfehlen würden?",
+      "type": "mc",
+      "options": [
+        "1 (auf gar keinen Fall)",
+        "2",
+        "3",
+        "4",
+        "5 (auf jeden Fall)"
+      ]
+    },
+    {
+      "text": "Haben Sie noch weitere Anregungen, Wünsche oder kritisches Feedback für mich?",
+      "type": "text",
+      "options": []
+    }
+  ]
+}

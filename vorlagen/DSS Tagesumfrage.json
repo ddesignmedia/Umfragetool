@@ -1,0 +1,59 @@
+{
+  "title": "DSS Tagesumfrage!",
+  "questions": [
+    {
+      "text": "Wie geht es Dir heute?",
+      "type": "mc",
+      "options": [
+        "1 (Spitze)",
+        "2",
+        "3 (Geht so)",
+        "4",
+        "5 (Gar nicht gut)"
+      ]
+    },
+    {
+      "text": "Hast Du das Gefühl ihr seid heute gut weitergekommen?",
+      "type": "mc",
+      "options": [
+        "1 (Haben richtig was geschafft!)",
+        "2",
+        "3 (Nicht so wirklich)",
+        "4",
+        "5 (Heute ging gar nix voran)"
+      ]
+    },
+    {
+      "text": "Wie war die Stimmung im Team?",
+      "type": "mc",
+      "options": [
+        "1 (Super)",
+        "2",
+        "3 (Passt so)",
+        "4",
+        "5 (Eher unproduktiv)"
+      ]
+    },
+    {
+      "text": "Wie empfindest Du die Arbeitsteilung?",
+      "type": "mc",
+      "options": [
+        "1 (Absolut fair und ausgeglichen)",
+        "2",
+        "3 (Könnte besser sein)",
+        "3",
+        "5 (Bin der einzige, der was macht)"
+      ]
+    },
+    {
+      "text": "Was findest Du, ist es wert, weiterhin genau so im Team beizubehalten?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Was findest Du, muss unbedingt im Team (Arbeitsweise) geändert werden?",
+      "type": "text",
+      "options": []
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "title": "Feedback zum Test",
+  "questions": [
+    {
+      "text": "Wie ist dein unmittelbares Gefühl bezüglich deiner Leistung in diesem Test?",
+      "type": "mc",
+      "options": [
+        "1 (Sehr schlecht)",
+        "2",
+        "3 (Neutral)",
+        "4",
+        "5 (Sehr gut)"
+      ]
+    },
+    {
+      "text": "Wie schätzt du deine eigene Vorbereitung auf diesen Test ein?",
+      "type": "mc",
+      "options": [
+        "1 (Kaum vorbereitet)",
+        "2",
+        "3 (Mittelmäßig)",
+        "4",
+        "5 (Sehr gut vorbereitet)"
+      ]
+    },
+    {
+      "text": "Wie schwer fandest du den Test insgesamt?",
+      "type": "mc",
+      "options": [
+        "1 (Viel zu leicht)",
+        "2 (Eher leicht)",
+        "3 (Genau richtig)",
+        "4 (Eher schwer)",
+        "5 (Viel zu schwer)"
+      ]
+    },
+    {
+      "text": "Wie empfandst du den Umfang der Aufgaben (die Menge des Stoffs, die abgefragt wurde)?",
+      "type": "mc",
+      "options": [
+        "1 (Viel zu gering)",
+        "2 (Eher gering)",
+        "3 (Genau passend)",
+        "4 (Eher groß)",
+        "5 (Viel zu groß)"
+      ]
+    },
+    {
+      "text": "Wie beurteilst du die zur Verfügung stehende Bearbeitungszeit?",
+      "type": "mc",
+      "options": [
+        "1 (Viel zu viel Zeit)",
+        "2 (Eher viel Zeit)",
+        "3 (Genau passend)",
+        "4 (Eher wenig Zeit)",
+        "5 (Viel zu wenig Zeit)"
+      ]
+    },
+    {
+      "text": "Inwieweit hat dich der Unterricht auf die Themen und Aufgabenstellungen in diesem Test vorbereitet?",
+      "type": "mc",
+      "options": [
+        "1 (Überhaupt nicht)",
+        "2 (Wenig)",
+        "3 (Teils/teils)",
+        "4 (Gut)",
+        "5 (Sehr gut)"
+      ]
+    },
+    {
+      "text": "Wie verständlich waren die Formulierungen der Aufgabenstellungen?",
+      "type": "mc",
+      "options": [
+        "1 (Sehr unverständlich)",
+        "2 (Eher unverständlich)",
+        "3 (Neutral)",
+        "4 (Eher verständlich)",
+        "5 (Sehr verständlich)"
+      ]
+    },
+    {
+      "text": "Welche Aufgabe oder welcher Aufgabentyp fiel dir am schwersten? Hast du eine Idee, woran das lag?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Welche Themen aus dem Unterricht hast du im Test vermisst, oder welche Themen im Test kamen dir (zu) überraschend vor?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Was möchtest du mir sonst noch zum Test oder zum Unterricht der letzten Wochen mitteilen? (z.B. Wünsche für die Vorbereitung auf den nächsten Test)",
+      "type": "text",
+      "options": []
+    }
+  ]
+}

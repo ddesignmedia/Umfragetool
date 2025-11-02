@@ -1,0 +1,59 @@
+{
+  "title": "Feedback zur heutigen Stunde",
+  "questions": [
+    {
+      "text": "Wie ist deine heutige Stimmung",
+      "type": "mc",
+      "options": [
+        "1 (fühle super)",
+        "2",
+        "3 (geht so)",
+        "4",
+        "5 (ganz mies)"
+      ]
+    },
+    {
+      "text": "Bei der heutigen Stunde habe ich das Gefühl alles verstanden zu haben!",
+      "type": "mc",
+      "options": [
+        "1 (ja alles verstanden",
+        "2",
+        "3 (naja eher nur die Hälfte)",
+        "4",
+        "5 (kein Plan von heute!)"
+      ]
+    },
+    {
+      "text": "Mir hat die heutige Stunde (soweit man generell in der Schule sagen) Spaß gemacht!",
+      "type": "mc",
+      "options": [
+        "1 (ja, war richtig gut)",
+        "2",
+        "3 (naja ähnlich wie in vielen anderen Stunden auch)",
+        "4",
+        "5 (war grauenhaft)"
+      ]
+    },
+    {
+      "text": "Wenn du gerade 1 oder 2 bzw 4 oder 5 geantwortest hast nenne doch bitte einen Grund dafür!",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Wie schätzt du deine eigene Mitarbeit heute ein?",
+      "type": "mc",
+      "options": [
+        "1 (grandios)",
+        "2",
+        "3 (passt so)",
+        "4",
+        "5 (miserabel)"
+      ]
+    },
+    {
+      "text": "Das habe ich heute aus der Stunde mitgenommen/gelernt!",
+      "type": "text",
+      "options": []
+    }
+  ]
+}
