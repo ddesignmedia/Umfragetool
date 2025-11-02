@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danke für dein Feedback</title>
+    <!-- Einbindung der Bibliotheken für PDF-Export und QR-Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-color: #f8f9fa;
+            --surface-color: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button.secondary {
+            background-color: var(--secondary-color);
+        }
+
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        button.danger {
+            background-color: var(--danger-color);
+        }
+        
+        button.danger:hover {
+            background-color: #c82333;
+        }
+
+        button.success {
+            background-color: var(--success-color);
+        }
+        
+        button.success:hover {
+            background-color: #218838;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .question-block {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .option-input {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .option-input input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        .result-bar-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .result-bar {
+            background-color: var(--success-color);
+            height: 24px;
+            line-height: 24px;
+            color: white;
+            text-align: right;
+            padding-right: 10px;
+            white-space: nowrap;
+            transition: width 0.5s ease-in-out;
+            box-sizing: border-box;
+        }
+
+        #results-container .card {
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .loader {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+
+        #share-section {
+            text-align: center;
+            border: 2px dashed var(--primary-color);
+            padding: 20px;
+            border-radius: 12px;
+        }
+        
+        #share-link {
+            font-weight: bold;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+
+        #qrcode {
+            margin: 20px auto 0;
+            padding: 10px;
+            background: white;
+            display: inline-block;
+        }
+        
+        .text-answer {
+             background-color: #f8f9fa;
+             border-left: 4px solid var(--primary-color);
+             padding: 10px 15px;
+             margin-bottom: 10px;
+             border-radius: 4px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 20px;
+            line-height: 40px;
+            text-align: center;
+            flex-shrink: 0; /* Verhindert, dass der Button schrumpft */
+        }
+
+        .question-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px; /* Abstand zwischen den Buttons */
+            margin-top: 10px;
+        }
+
+        .templates-container {
+            margin-top: 20px;
+        }
+
+        .templates-toggle {
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .templates-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .templates-list li {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .templates-list li:hover {
+            background-color: #f1f1f1;
+        }
+
+        .active-surveys-container {
+            margin-top: 30px;
+        }
+
+        .active-surveys-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .active-surveys-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .active-surveys-list .survey-title {
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Danke für dein Feedback</h1>
+
+        <!-- Ansicht zum Erstellen der Umfrage -->
+        <div id="create-view">
+            <div class="card">
+                <h2>Neue Umfrage erstellen</h2>
+                <input type="text" id="survey-title" placeholder="Titel der Umfrage">
+                <div id="questions-container"></div>
+
+                <!-- Vorlagen Sektion -->
+                <div class="templates-container">
+                    <span class="templates-toggle">Vorhandene Vorlage auswählen ▼</span>
+                    <ul id="templates-list" class="templates-list hidden">
+                        <!-- Vorlagen werden hier dynamisch eingefügt -->
+                    </ul>
+                </div>
+
+                <button id="save-template-btn" class="secondary">Vorlage speichern</button>
+                <button id="load-template-btn" class="secondary">Vorlage laden</button>
+                <input type="file" id="template-file-input" class="hidden" accept=".json">
+                <button id="create-survey-btn" style="float: right;">Umfrage starten</button>
+            </div>
+
+            <!-- Bereich für aktive Umfragen -->
+            <div class="card active-surveys-container">
+                <h2>Aktive Umfragen</h2>
+                <ul id="active-surveys-list" class="active-surveys-list">
+                    <!-- Aktive Umfragen werden hier dynamisch eingefügt -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Ansicht zum Ausfüllen der Umfrage -->
+        <div id="survey-view" class="hidden">
+            <div class="card">
+                <h2 id="participant-survey-title"></h2>
+                <form id="survey-form"></form>
+                <button id="submit-survey-btn">Antworten absenden</button>
+            </div>
+             <div id="thank-you-message" class="card hidden" style="text-align: center;">
+                <h3>Vielen Dank für Ihre Teilnahme!</h3>
+            </div>
+        </div>
+
+        <!-- Ansicht für die Live-Ergebnisse -->
+        <div id="results-view" class="hidden">
+            <div class="card">
+                <h2 id="results-survey-title">Live-Ergebnisse</h2>
+                <div id="share-section">
+                     <h3>Teilen Sie diesen Link mit Ihrem Publikum:</h3>
+                     <p id="share-link"></p>
+                     <div id="qrcode"></div>
+                     <br>
+                     <button id="copy-link-btn">Link kopieren</button>
+                </div>
+            </div>
+            <div id="results-container">
+                <div class="loader">Warte auf erste Antworten...</div>
+            </div>
+             <div class="card" style="text-align: center;">
+                <button id="export-pdf-btn">Ergebnisse als PDF speichern</button>
+                <button id="delete-survey-btn" class="danger">Umfrage beenden & löschen</button>
+             </div>
+        </div>
+
+        <!-- Ladeanzeige -->
+        <div id="loading-view" class="loader">
+            <h2>Lade...</h2>
+        </div>
+    </div>
+
+    <script>
+        // --- Globale Variablen ---
+        const API_BASE_URL = 'api/'; // Basis-URL für die PHP-Skripte
+        let pollInterval = null; // Variable für das Polling-Intervall
+
+        // --- UI Elemente ---
+        const views = {
+            create: document.getElementById('create-view'),
+            survey: document.getElementById('survey-view'),
+            results: document.getElementById('results-view'),
+            loading: document.getElementById('loading-view')
+        };
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        const createSurveyBtn = document.getElementById('create-survey-btn');
+        const submitSurveyBtn = document.getElementById('submit-survey-btn');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const deleteSurveyBtn = document.getElementById('delete-survey-btn');
+        const saveTemplateBtn = document.getElementById('save-template-btn');
+        const loadTemplateBtn = document.getElementById('load-template-btn');
+        const templateFileInput = document.getElementById('template-file-input');
+        const templatesToggle = document.querySelector('.templates-toggle');
+        const templatesList = document.getElementById('templates-list');
+        const activeSurveysList = document.getElementById('active-surveys-list');
+
+        // --- App Initialisierung & Routing ---
+
+        function handleRouting() {
+            const hash = window.location.hash;
+            hideAllViews();
+            if (pollInterval) clearInterval(pollInterval); // Polling stoppen bei Ansichtswechsel
+
+            if (hash.startsWith('#results/')) {
+                const surveyId = hash.split('/')[1];
+                showResultsView(surveyId);
+            } else if (hash.startsWith('#survey/')) {
+                const surveyId = hash.split('/')[1];
+                showSurveyView(surveyId);
+            } else {
+                showCreateView();
+            }
+        }
+
+        function hideAllViews() {
+            Object.values(views).forEach(view => view.classList.add('hidden'));
+        }
+
+        window.addEventListener('hashchange', handleRouting);
+        
+        // --- Ansicht: Umfrage erstellen ---
+
+        let questionCount = 0;
+
+        function showCreateView() {
+            views.create.classList.remove('hidden');
+            if (questionCount === 0) { // Nur hinzufügen, wenn noch keine Fragen da sind
+                 addQuestion();
+            }
+            loadAndDisplayTemplates();
+            loadAndDisplayActiveSurveys();
+        }
+
+        async function loadAndDisplayActiveSurveys() {
+            try {
+                const response = await fetch(API_BASE_URL + 'list_active_surveys.php');
+                const surveys = await response.json();
+                
+                activeSurveysList.innerHTML = ''; // Liste leeren
+                if (surveys.length === 0) {
+                    activeSurveysList.innerHTML = '<li>Derzeit sind keine Umfragen aktiv.</li>';
+                    return;
+                }
+
+                surveys.forEach(survey => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="survey-title">${survey.title}</span>
+                        <div>
+                            <button type="button" data-survey-id="${survey.id}" class="clone-survey-btn secondary icon-btn">📋</button>
+                            <button type="button" data-survey-id="${survey.id}" class="view-results-btn success icon-btn">▶️</button>
+                            <button type="button" data-survey-id="${survey.id}" class="delete-active-survey-btn danger icon-btn">🗑️</button>
+                        </div>
+                    `;
+                    
+                    li.querySelector('.delete-active-survey-btn').addEventListener('click', async (event) => {
+                        const surveyId = event.currentTarget.dataset.surveyId;
+                        await deleteSurvey(surveyId, true); 
+                        loadAndDisplayActiveSurveys(); 
+                    });
+
+                    li.querySelector('.view-results-btn').addEventListener('click', (event) => {
+                        const surveyId = event.currentTarget.dataset.surveyId;
+                        window.location.hash = `#results/${surveyId}`;
+                    });
+
+                    li.querySelector('.clone-survey-btn').addEventListener('click', (event) => {
+                        const surveyId = event.currentTarget.dataset.surveyId;
+                        cloneSurvey(surveyId);
+                    });
+
+                    activeSurveysList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Fehler beim Laden der aktiven Umfragen:", error);
+                activeSurveysList.innerHTML = '<li>Fehler beim Laden der Umfragen.</li>';
+            }
+        }
+
+        async function loadAndDisplayTemplates() {
+            try {
+                const response = await fetch(API_BASE_URL + 'list_templates.php');
+                const templateNames = await response.json();
+                
+                templatesList.innerHTML = ''; // Liste leeren
+                if (templateNames.length === 0) {
+                    templatesList.innerHTML = '<li>Keine Vorlagen gefunden.</li>';
+                    return;
+                }
+
+                templateNames.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    li.dataset.id = name;
+                    li.addEventListener('click', () => loadServerTemplate(name));
+                    templatesList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Fehler beim Laden der Vorlagen:", error);
+                templatesList.innerHTML = '<li>Fehler beim Laden.</li>';
+            }
+        }
+
+        templatesToggle.addEventListener('click', () => {
+            templatesList.classList.toggle('hidden');
+            const icon = templatesList.classList.contains('hidden') ? '▼' : '▲';
+            templatesToggle.textContent = `Vorhandene Vorlage auswählen ${icon}`;
+        });
+
+        function addQuestion() {
+            questionCount++;
+            const container = document.getElementById('questions-container');
+            const questionBlock = document.createElement('div');
+            questionBlock.className = 'question-block';
+            questionBlock.id = `question-${questionCount}`;
+            questionBlock.innerHTML = `
+                <h3>Frage ${questionCount}</h3>
+                <input type="text" class="question-text" placeholder="Ihre Frage hier...">
+                <label for="question-type-${questionCount}">Fragetyp:</label>
+                <select class="question-type" id="question-type-${questionCount}">
+                    <option value="mc">Multiple-Choice</option>
+                    <option value="text">Offener Text</option>
+                </select>
+                <div class="options-container">
+                     <div class="option-input">
+                        <input type="text" class="option-text" placeholder="Antwortmöglichkeit 1">
+                     </div>
+                     <div class="option-input">
+                        <input type="text" class="option-text" placeholder="Antwortmöglichkeit 2">
+                     </div>
+                </div>
+                <button type="button" class="add-option-btn secondary icon-btn">+</button>
+                <div class="question-actions">
+                    <button type="button" class="add-sibling-question-btn success icon-btn">+</button>
+                    <button type="button" class="remove-question-btn danger icon-btn">🗑️</button>
+                </div>
+            `;
+            container.appendChild(questionBlock);
+
+            questionBlock.querySelector('.add-sibling-question-btn').addEventListener('click', () => {
+                addQuestion();
+            });
+
+            questionBlock.querySelector('.question-type').addEventListener('change', (e) => {
+                const optionsDiv = questionBlock.querySelector('.options-container');
+                const addOptionBtn = questionBlock.querySelector('.add-option-btn');
+                if (e.target.value === 'text') {
+                    optionsDiv.classList.add('hidden');
+                    addOptionBtn.classList.add('hidden');
+                } else {
+                    optionsDiv.classList.remove('hidden');
+                    addOptionBtn.classList.remove('hidden');
+                }
+            });
+
+            questionBlock.querySelector('.add-option-btn').addEventListener('click', () => {
+                addOption(questionBlock);
+            });
+            
+            questionBlock.querySelector('.remove-question-btn').addEventListener('click', () => {
+                questionBlock.remove();
+            });
+        }
+
+        function addOption(questionBlock) {
+            const optionsContainer = questionBlock.querySelector('.options-container');
+            const optionCount = optionsContainer.children.length + 1;
+            const newOption = document.createElement('div');
+            newOption.className = 'option-input';
+            newOption.innerHTML = `
+                <input type="text" class="option-text" placeholder="Antwortmöglichkeit ${optionCount}">
+                <button type="button" class="remove-option-btn danger icon-btn">-</button>
+            `;
+            optionsContainer.appendChild(newOption);
+            newOption.querySelector('.remove-option-btn').addEventListener('click', () => {
+                newOption.remove();
+            });
+        }
+        
+        async function cloneSurvey(surveyId) {
+            try {
+                // Wir verwenden denselben Endpunkt, der auch zum Ausfüllen der Umfrage für Teilnehmer dient
+                const response = await fetch(`${API_BASE_URL}get_survey.php?id=${surveyId}`);
+                if (!response.ok) throw new Error(`Serverfehler: ${response.statusText}`);
+                const data = await response.json();
+                
+                // Wir benennen den Titel um, um klarzustellen, dass es eine Kopie ist
+                data.title = `Kopie von: ${data.title}`;
+                
+                populateFormWithTemplate(data);
+                
+                // Scrollen Sie zum Anfang der Seite, um das ausgefüllte Formular zu sehen
+                window.scrollTo(0, 0);
+                alert("Die Umfrage wurde als neue Vorlage in das Formular geladen. Sie können sie jetzt bearbeiten und als neue Umfrage starten.");
+            } catch (error) {
+                alert('Fehler beim Klonen der Umfrage: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        // --- Vorlagen-Funktionen ---
+        
+        async function loadServerTemplate(templateId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}get_template.php?id=${templateId}`);
+                if (!response.ok) throw new Error(`Serverfehler: ${response.statusText}`);
+                const data = await response.json();
+                populateFormWithTemplate(data);
+                // Schließe die Liste nach der Auswahl
+                templatesList.classList.add('hidden');
+                templatesToggle.textContent = 'Vorhandene Vorlage auswählen ▼';
+            } catch (error) {
+                alert('Fehler beim Laden der Vorlage: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function getSurveyDataFromForm() {
+            const title = document.getElementById('survey-title').value.trim();
+            const questions = [];
+            const questionBlocks = document.querySelectorAll('.question-block');
+
+            for (const block of questionBlocks) {
+                const text = block.querySelector('.question-text').value.trim();
+                const type = block.querySelector('.question-type').value;
+                if (!text) continue; // Leere Fragen ignorieren
+
+                const question = { text, type, options: [] };
+
+                if (type === 'mc') {
+                    const optionInputs = block.querySelectorAll('.option-text');
+                    optionInputs.forEach(input => {
+                        const optionText = input.value.trim();
+                        if (optionText) {
+                            question.options.push(optionText);
+                        }
+                    });
+                }
+                questions.push(question);
+            }
+            return { title, questions };
+        }
+
+        function saveTemplate() {
+            const surveyData = getSurveyDataFromForm();
+            if (!surveyData.title && surveyData.questions.length === 0) {
+                alert("Es gibt nichts zu speichern. Fügen Sie bitte einen Titel oder Fragen hinzu.");
+                return;
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(surveyData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            const fileName = surveyData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'umfrage_vorlage';
+            downloadAnchorNode.setAttribute("download", `${fileName}.json`);
+            document.body.appendChild(downloadAnchorNode); // Erforderlich für Firefox
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        saveTemplateBtn.addEventListener('click', saveTemplate);
+
+        function populateFormWithTemplate(data) {
+             if (!data.questions) throw new Error("Ungültiges Format");
+
+            // Formular zurücksetzen
+            document.getElementById('survey-title').value = data.title || '';
+            const questionsContainer = document.getElementById('questions-container');
+            questionsContainer.innerHTML = '';
+            questionCount = 0;
+
+            // Formular mit neuen Daten aufbauen
+            data.questions.forEach(q => {
+                addQuestion(); // Erstellt einen neuen, leeren Fragenblock
+                const newBlock = document.getElementById(`question-${questionCount}`);
+                newBlock.querySelector('.question-text').value = q.text;
+                const questionTypeSelect = newBlock.querySelector('.question-type');
+                questionTypeSelect.value = q.type;
+                
+                // Event manuell auslösen, um Optionscontainer bei 'text' auszublenden
+                questionTypeSelect.dispatchEvent(new Event('change'));
+
+                if (q.type === 'mc' && q.options) {
+                    const optionsContainer = newBlock.querySelector('.options-container');
+                    optionsContainer.innerHTML = ''; // Standard-Optionen entfernen
+                    q.options.forEach(opt => {
+                        addOption(newBlock);
+                        const optionInputs = optionsContainer.querySelectorAll('.option-text');
+                        optionInputs[optionInputs.length - 1].value = opt;
+                    });
+                }
+            });
+        }
+
+        function loadTemplateFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    populateFormWithTemplate(data);
+                } catch (error) {
+                    alert('Fehler beim Laden der Vorlage: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Input zurücksetzen, damit dieselbe Datei erneut geladen werden kann
+            event.target.value = '';
+        }
+
+        loadTemplateBtn.addEventListener('click', () => templateFileInput.click());
+        templateFileInput.addEventListener('change', loadTemplateFromFile);
+
+        createSurveyBtn.addEventListener('click', async () => {
+            const title = document.getElementById('survey-title').value.trim();
+            if (!title) {
+                alert("Bitte geben Sie einen Titel für die Umfrage ein.");
+                return;
+            }
+
+            const questions = [];
+            const questionBlocks = document.querySelectorAll('.question-block');
+            if(questionBlocks.length === 0){
+                alert("Bitte fügen Sie mindestens eine Frage hinzu.");
+                return;
+            }
+
+            for (const block of questionBlocks) {
+                const text = block.querySelector('.question-text').value.trim();
+                const type = block.querySelector('.question-type').value;
+
+                if (!text) {
+                    alert("Bitte geben Sie für jede Frage einen Text ein.");
+                    return;
+                }
+
+                const question = { id: `q${questions.length + 1}`, text, type };
+
+                if (type === 'mc') {
+                    question.options = [];
+                    const optionInputs = block.querySelectorAll('.option-text');
+                    optionInputs.forEach(input => {
+                        const optionText = input.value.trim();
+                        if (optionText) {
+                            question.options.push(optionText);
+                        }
+                    });
+                    if(question.options.length < 2){
+                        alert("Multiple-Choice-Fragen benötigen mindestens zwei Antwortmöglichkeiten.");
+                        return;
+                    }
+                }
+                questions.push(question);
+            }
+            
+            const token = prompt("Bitte geben Sie den geheimen Erstellungs-Token ein, um die Umfrage zu starten:");
+            if (!token) {
+                alert("Erstellung abgebrochen. Kein Token eingegeben.");
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE_URL + 'create_survey.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, questions, token: token })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    window.location.hash = `#results/${result.surveyId}`;
+                } else {
+                    throw new Error(result.message || 'Unbekannter Fehler');
+                }
+            } catch (error) {
+                console.error("Fehler beim Erstellen der Umfrage:", error);
+                alert("Die Umfrage konnte nicht erstellt werden: " + error.message);
+            }
+        });
+
+        // --- Ansicht: Umfrage ausfüllen ---
+
+        async function showSurveyView(surveyId) {
+            views.loading.classList.remove('hidden');
+            try {
+                const response = await fetch(`${API_BASE_URL}get_survey.php?id=${surveyId}`);
+                const survey = await response.json();
+                
+                if (survey.error) throw new Error(survey.error);
+
+                document.getElementById('participant-survey-title').innerText = survey.title;
+                const form = document.getElementById('survey-form');
+                form.innerHTML = ''; 
+
+                survey.questions.forEach(q => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'question';
+                    questionDiv.innerHTML = `<h4>${q.text}</h4>`;
+
+                    if (q.type === 'mc') {
+                        q.options.forEach(option => {
+                            questionDiv.innerHTML += `
+                                <label style="display: block; margin-bottom: 10px;">
+                                    <input type="radio" name="${q.id}" value="${option}" required>
+                                    ${option}
+                                </label>
+                            `;
+                        });
+                    } else if (q.type === 'text') {
+                        questionDiv.innerHTML += `<textarea name="${q.id}" rows="3" style="width: 100%;" required></textarea>`;
+                    }
+                    form.appendChild(questionDiv);
+                });
+                
+                submitSurveyBtn.onclick = () => submitSurvey(surveyId, survey.questions);
+                views.loading.classList.add('hidden');
+                views.survey.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Fehler beim Laden der Umfrage:", error);
+                alert("Die Umfrage konnte nicht geladen werden.");
+                window.location.hash = '';
+            }
+        }
+        
+        async function submitSurvey(surveyId, questions) {
+             const form = document.getElementById('survey-form');
+             if(!form.checkValidity()) {
+                form.reportValidity();
+                return;
+             }
+             
+             const formData = new FormData(form);
+             const answers = {};
+             questions.forEach(q => {
+                 answers[q.id] = formData.get(q.id);
+             });
+             
+             try {
+                const response = await fetch(API_BASE_URL + 'submit_answer.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ surveyId, answers })
+                });
+                const result = await response.json();
+
+                if (!result.success) throw new Error(result.message);
+
+                document.querySelector('#survey-view .card').classList.add('hidden');
+                document.getElementById('thank-you-message').classList.remove('hidden');
+             } catch(error) {
+                console.error("Fehler beim Senden der Antwort:", error);
+                alert("Ihre Antwort konnte nicht gesendet werden: " + error.message);
+             }
+        }
+        
+        // --- Ansicht: Live-Ergebnisse ---
+
+        async function deleteSurvey(surveyId, _isSilent = false) {
+            const confirmation = confirm("Möchten Sie diese Umfrage wirklich endgültig beenden und alle zugehörigen Daten löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.");
+            if (!confirmation) {
+                return;
+            }
+
+            // Fordern Sie den Benutzer zur Eingabe des Tokens auf
+            const token = prompt("Bitte geben Sie den geheimen Lösch-Token ein, um fortzufahren:");
+            if (!token) {
+                // Benutzer hat Abbrechen gedrückt oder nichts eingegeben
+                if (!_isSilent) {
+                    alert("Löschvorgang abgebrochen. Kein Token eingegeben.");
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE_URL + 'delete_survey.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ surveyId: surveyId, token: token })
+                });
+                
+                const result = await response.json();
+
+                if (result.success) {
+                    if (!_isSilent) {
+                        alert("Umfrage erfolgreich gelöscht.");
+                        if (pollInterval) clearInterval(pollInterval);
+                        window.location.hash = ''; // Zurück zur Startseite
+                    }
+                } else {
+                    throw new Error(result.message || 'Unbekannter Fehler beim Löschen.');
+                }
+            } catch (error) {
+                alert("Fehler: " + error.message);
+                console.error("Fehler beim Löschen der Umfrage:", error);
+            }
+        }
+        
+        async function showResultsView(surveyId) {
+            views.loading.classList.remove('hidden');
+            
+            const link = `${window.location.origin}${window.location.pathname}#survey/${surveyId}`;
+            document.getElementById('share-link').innerText = link;
+            
+            const qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+            new QRCode(qrcodeContainer, { text: link, width: 256, height: 256 });
+            
+            copyLinkBtn.onclick = () => {
+                navigator.clipboard.writeText(link).then(() => {
+                   copyLinkBtn.innerText = "Kopiert!";
+                   setTimeout(() => { copyLinkBtn.innerText = "Link kopieren"; }, 2000);
+                });
+            };
+
+            const fetchAndRenderResults = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}get_results.php?id=${surveyId}`);
+                    const data = await response.json();
+
+                    if (data.error) throw new Error(data.error);
+                    
+                    if (document.getElementById('results-survey-title').innerText === 'Live-Ergebnisse') {
+                         document.getElementById('results-survey-title').innerText = `Live-Ergebnisse: ${data.survey.title}`;
+                         exportPdfBtn.onclick = () => exportResultsAsPDF(data.survey.title);
+                         deleteSurveyBtn.onclick = () => deleteSurvey(surveyId);
+                    }
+                    
+                    renderResults(data.survey, data.responses);
+                    
+                    views.loading.classList.add('hidden');
+                    views.results.classList.remove('hidden');
+                } catch (error) {
+                    console.error("Fehler beim Laden der Ergebnisse:", error);
+                    alert("Die Ergebnisse konnten nicht geladen werden.");
+                    if(pollInterval) clearInterval(pollInterval);
+                    window.location.hash = '';
+                }
+            };
+            
+            await fetchAndRenderResults(); // Initialer Aufruf
+            pollInterval = setInterval(fetchAndRenderResults, 5000); // Alle 5 Sekunden pollen
+        }
+        
+        function renderResults(survey, responses){
+            const container = document.getElementById('results-container');
+            container.innerHTML = '';
+            
+            if(responses.length === 0){
+                container.innerHTML = '<div class="loader">Warte auf erste Antworten...</div>';
+                return;
+            }
+
+            survey.questions.forEach(q => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<h3>${q.text}</h3>`;
+                
+                if (q.type === 'mc') {
+                    const results = {};
+                    q.options.forEach(opt => results[opt] = 0);
+                    
+                    let totalVotes = 0;
+                    responses.forEach(res => {
+                        const answer = res.answers[q.id];
+                        if(answer in results){
+                            results[answer]++;
+                            totalVotes++;
+                        }
+                    });
+                    
+                    q.options.forEach(opt => {
+                       const count = results[opt];
+                       const percentage = totalVotes > 0 ? (count / totalVotes * 100).toFixed(1) : 0;
+                       
+                       card.innerHTML += `
+                            <div>
+                                <strong>${opt}</strong> (${count} Stimme${count !== 1 ? 'n' : ''})
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-bar" style="width: ${percentage}%;">
+                                    ${percentage > 5 ? (percentage + '%') : ''}
+                                </div>
+                            </div>
+                       `;
+                    });
+                    
+                } else if (q.type === 'text') {
+                    const answersDiv = document.createElement('div');
+                    responses.forEach(res => {
+                        const answerText = res.answers[q.id];
+                        if (answerText) {
+                            const answerEl = document.createElement('div');
+                            answerEl.className = 'text-answer';
+                            answerEl.textContent = answerText;
+                            answersDiv.appendChild(answerEl);
+                        }
+                    });
+                    card.appendChild(answersDiv);
+                }
+                container.appendChild(card);
+            });
+        }
+        
+        // --- Hilfsfunktionen ---
+        
+        async function exportResultsAsPDF(title) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            const resultCards = document.querySelectorAll('#results-container .card');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+            let yPosition = margin;
+
+            // Titel hinzufügen
+            pdf.setFontSize(18);
+            const splitTitle = pdf.splitTextToSize(title, pdfWidth - margin * 2);
+            pdf.text(splitTitle, margin, yPosition);
+            yPosition += (splitTitle.length * 10) + 10; // Platz nach dem Titel
+
+            // Jede Ergebnis-Karte einzeln verarbeiten
+            for (const card of resultCards) {
+                const canvas = await html2canvas(card, { scale: 1.5 });
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgHeight = (imgProps.height * (pdfWidth - margin * 2)) / imgProps.width;
+
+                // Prüfen, ob die Karte auf die aktuelle Seite passt
+                if (yPosition + imgHeight > pageHeight - margin) {
+                    pdf.addPage();
+                    yPosition = margin; // Position auf der neuen Seite zurücksetzen
+                }
+
+                pdf.addImage(imgData, 'JPEG', margin, yPosition, pdfWidth - margin * 2, imgHeight);
+                yPosition += imgHeight + 5; // Nächste Position + kleiner Abstand
+            }
+            
+            pdf.save(`Umfrage-Ergebnisse-${title.replace(/ /g,"_")}.pdf`);
+        }
+
+        // --- App starten ---
+        document.addEventListener('DOMContentLoaded', handleRouting);
+    </script>
+</body>
+</html>
