@@ -47,10 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sanitizedAnswers = [];
     if (is_array($data['answers'])) {
         foreach ($data['answers'] as $questionId => $answer) {
-            // Bereinige jede Antwort, egal ob Text oder Multiple-Choice-Wert
-            $sanitizedAnswers[$questionId] = is_string($answer)
-                ? htmlspecialchars($answer, ENT_QUOTES, 'UTF-8')
-                : $answer; // Behalte Nicht-Strings bei (sollte nicht vorkommen)
+            if (is_array($answer)) {
+                // Bereinige jedes Element im Array für mca-Fragen
+                $sanitizedAnswers[$questionId] = array_map(function($a) {
+                    return is_string($a) ? htmlspecialchars($a, ENT_QUOTES, 'UTF-8') : $a;
+                }, $answer);
+            } else {
+                // Bereinige einzelne Antworten für mc- und text-Fragen
+                $sanitizedAnswers[$questionId] = is_string($answer)
+                    ? htmlspecialchars($answer, ENT_QUOTES, 'UTF-8')
+                    : $answer;
+            }
         }
     }
 

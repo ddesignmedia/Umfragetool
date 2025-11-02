@@ -486,7 +486,8 @@
                 <input type="text" class="question-text" placeholder="Ihre Frage hier...">
                 <label for="question-type-${questionCount}">Fragetyp:</label>
                 <select class="question-type" id="question-type-${questionCount}">
-                    <option value="mc">Multiple-Choice</option>
+                    <option value="mc">Multiple-Choice (eine Antwort)</option>
+                    <option value="mca">Multiple-Choice (mehrere Antworten)</option>
                     <option value="text">Offener Text</option>
                 </select>
                 <div class="options-container">
@@ -595,7 +596,7 @@
 
                 const question = { text, type, options: [] };
 
-                if (type === 'mc') {
+                if (type === 'mc' || type === 'mca') {
                     const optionInputs = block.querySelectorAll('.option-text');
                     optionInputs.forEach(input => {
                         const optionText = input.value.trim();
@@ -648,7 +649,7 @@
                 // Event manuell auslösen, um Optionscontainer bei 'text' auszublenden
                 questionTypeSelect.dispatchEvent(new Event('change'));
 
-                if (q.type === 'mc' && q.options) {
+                if ((q.type === 'mc' || q.type === 'mca') && q.options) {
                     const optionsContainer = newBlock.querySelector('.options-container');
                     optionsContainer.innerHTML = ''; // Standard-Optionen entfernen
                     q.options.forEach(opt => {
@@ -707,7 +708,7 @@
 
                 const question = { id: `q${questions.length + 1}`, text, type };
 
-                if (type === 'mc') {
+                if (type === 'mc' || type === 'mca') {
                     question.options = [];
                     const optionInputs = block.querySelectorAll('.option-text');
                     optionInputs.forEach(input => {
@@ -776,6 +777,15 @@
                                 </label>
                             `;
                         });
+                    } else if (q.type === 'mca') {
+                        q.options.forEach(option => {
+                            questionDiv.innerHTML += `
+                                <label style="display: block; margin-bottom: 10px;">
+                                    <input type="checkbox" name="${q.id}" value="${option}">
+                                    ${option}
+                                </label>
+                            `;
+                        });
                     } else if (q.type === 'text') {
                         questionDiv.innerHTML += `<textarea name="${q.id}" rows="3" style="width: 100%;" required></textarea>`;
                     }
@@ -803,7 +813,11 @@
              const formData = new FormData(form);
              const answers = {};
              questions.forEach(q => {
-                 answers[q.id] = formData.get(q.id);
+                if (q.type === 'mca') {
+                    answers[q.id] = formData.getAll(q.id);
+                } else {
+                    answers[q.id] = formData.get(q.id);
+                }
              });
              
              try {
@@ -926,14 +940,21 @@
                 card.className = 'card';
                 card.innerHTML = `<h3>${q.text}</h3>`;
                 
-                if (q.type === 'mc') {
+                if (q.type === 'mc' || q.type === 'mca') {
                     const results = {};
                     q.options.forEach(opt => results[opt] = 0);
                     
                     let totalVotes = 0;
                     responses.forEach(res => {
                         const answer = res.answers[q.id];
-                        if(answer in results){
+                        if (q.type === 'mca' && Array.isArray(answer)) {
+                            answer.forEach(ans => {
+                                if(ans in results){
+                                    results[ans]++;
+                                    totalVotes++;
+                                }
+                            });
+                        } else if(answer in results){
                             results[answer]++;
                             totalVotes++;
                         }
