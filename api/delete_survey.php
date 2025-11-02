@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json');
+require_once __DIR__ . '/config.php'; // Konfigurationsdatei einbinden
 
 // Erwarte eine POST-Anfrage
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -11,9 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Lese den JSON-Body aus der Anfrage
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($input['surveyId'])) {
+// Überprüfe das Vorhandensein der Survey-ID und des Tokens
+if (!isset($input['surveyId']) || !isset($input['token'])) {
     http_response_code(400); // Bad Request
-    echo json_encode(['success' => false, 'message' => 'Survey ID is missing.']);
+    echo json_encode(['success' => false, 'message' => 'Survey ID or token is missing.']);
+    exit;
+}
+
+// Überprüfe die Gültigkeit des Tokens
+if ($input['token'] !== DELETE_TOKEN) {
+    http_response_code(403); // Forbidden
+    echo json_encode(['success' => false, 'message' => 'Invalid token.']);
     exit;
 }
 
