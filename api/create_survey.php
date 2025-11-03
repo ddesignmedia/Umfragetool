@@ -52,9 +52,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Sanitize question data
     foreach ($surveyData['questions'] as &$question) {
         $question['text'] = htmlspecialchars($question['text'], ENT_QUOTES, 'UTF-8');
-        if (isset($question['options'])) {
+        if (isset($question['options']) && is_array($question['options'])) {
             foreach ($question['options'] as &$option) {
-                $option = htmlspecialchars($option, ENT_QUOTES, 'UTF-8');
+                if (is_array($option) && isset($option['text'])) {
+                    $option['text'] = htmlspecialchars($option['text'], ENT_QUOTES, 'UTF-8');
+                    // Ensure 'correct' is a boolean
+                    $option['correct'] = isset($option['correct']) && filter_var($option['correct'], FILTER_VALIDATE_BOOLEAN);
+                } else {
+                    // Backward compatibility for string options
+                    $option = htmlspecialchars($option, ENT_QUOTES, 'UTF-8');
+                }
             }
         }
     }
@@ -80,13 +87,22 @@ function isValidSurveyData($data) {
     if (!isset($data['questions']) || !is_array($data['questions']) || empty($data['questions'])) return false;
 
     foreach ($data['questions'] as $question) {
+        if (!isset($question['id']) || !is_string($question['id']) || trim($question['id']) === '') return false;
         if (!isset($question['text']) || !is_string($question['text']) || trim($question['text']) === '') return false;
         if (!isset($question['type']) || !in_array($question['type'], ['mc', 'mca', 'text'])) return false;
         
         if ($question['type'] === 'mc' || $question['type'] === 'mca') {
             if (!isset($question['options']) || !is_array($question['options']) || count($question['options']) < 2) return false;
             foreach ($question['options'] as $option) {
-                if (!is_string($option) || trim($option) === '') return false;
+                // Supports both new object format and old string format
+                if (is_array($option)) {
+                    if (!isset($option['text']) || !is_string($option['text']) || trim($option['text']) === '') return false;
+                    if (!isset($option['correct']) || !is_bool($option['correct'])) return false;
+                } else if (is_string($option)) {
+                    if (trim($option) === '') return false;
+                } else {
+                    return false; // Invalid option format
+                }
             }
         }
     }
