@@ -61,23 +61,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Neue Antwort hinzufügen
+    // Lade die Umfragedaten, um die korrekten Antworten zu überprüfen
+    $surveyJson = file_get_contents($surveyFilePath);
+    $surveyData = json_decode($surveyJson, true);
+    $isQuiz = false;
+    $score = 0;
+    $totalCorrectPossible = 0;
+
+    foreach ($surveyData['questions'] as $question) {
+        $isMcQuestion = in_array($question['type'], ['mc', 'mca']);
+        $hasCorrectAnswer = false;
+        if ($isMcQuestion) {
+            foreach ($question['options'] as $option) {
+                if (is_array($option) && $option['correct']) {
+                    $hasCorrectAnswer = true;
+                    $isQuiz = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$hasCorrectAnswer) continue;
+
+        $totalCorrectPossible++;
+        $questionId = $question['id'];
+        $userAnswer = $sanitizedAnswers[$questionId] ?? null;
+
+        $correctAnswers = [];
+        foreach ($question['options'] as $option) {
+            if (is_array($option) && $option['correct']) {
+                $correctAnswers[] = $option['text'];
+            }
+        }
+
+        if ($question['type'] === 'mc') {
+            if ($userAnswer && in_array($userAnswer, $correctAnswers)) {
+                $score++;
+            }
+        } elseif ($question['type'] === 'mca') {
+            if (is_array($userAnswer)) {
+                sort($userAnswer);
+                sort($correctAnswers);
+                if ($userAnswer === $correctAnswers) {
+                    $score++;
+                }
+            }
+        }
+    }
+
     $newResponse = [
         'responseId' => bin2hex(random_bytes(8)),
         'submittedAt' => date(DATE_ISO8601),
-        'answers' => $sanitizedAnswers // Verwende die bereinigten Antworten
+        'answers' => $sanitizedAnswers
     ];
+
+    if ($isQuiz) {
+        $newResponse['score'] = $score;
+        $newResponse['totalCorrect'] = $totalCorrectPossible;
+    }
+
     $responses[] = $newResponse;
 
-    // Alle Antworten zurück in die Datei schreiben
     $fileHandleWrite = fopen($answersFilePath, 'w');
-    if (flock($fileHandleWrite, LOCK_EX)) { // Exclusive lock zum Schreiben
+    if (flock($fileHandleWrite, LOCK_EX)) {
         fwrite($fileHandleWrite, json_encode($responses, JSON_PRETTY_PRINT));
         flock($fileHandleWrite, LOCK_UN);
     }
     fclose($fileHandleWrite);
 
-    echo json_encode(['success' => true, 'message' => 'Antwort erfolgreich gespeichert.']);
+    $responsePayload = ['success' => true, 'message' => 'Antwort erfolgreich gespeichert.'];
+    if ($isQuiz) {
+        $responsePayload['isQuiz'] = true;
+        $responsePayload['score'] = $score;
+        $responsePayload['totalCorrect'] = $totalCorrectPossible;
+    }
+
+    echo json_encode($responsePayload);
 
 } else {
     http_response_code(200);

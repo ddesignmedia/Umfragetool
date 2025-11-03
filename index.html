@@ -133,7 +133,7 @@
         }
 
         .result-bar {
-            background-color: var(--success-color);
+            background-color: var(--primary-color); /* Default color for non-quiz bars */
             height: 24px;
             line-height: 24px;
             color: white;
@@ -142,6 +142,14 @@
             white-space: nowrap;
             transition: width 0.5s ease-in-out;
             box-sizing: border-box;
+        }
+
+        .result-bar.result-bar-correct {
+            background-color: var(--success-color);
+        }
+
+        .result-bar.result-bar-incorrect {
+            background-color: var(--danger-color);
         }
 
         #results-container .card {
@@ -307,6 +315,7 @@
             </div>
              <div id="thank-you-message" class="card hidden" style="text-align: center;">
                 <h3>Vielen Dank für Ihre Teilnahme!</h3>
+                <p id="quiz-score-feedback"></p>
             </div>
         </div>
 
@@ -491,12 +500,16 @@
                     <option value="text">Offener Text</option>
                 </select>
                 <div class="options-container">
-                     <div class="option-input">
+                    <div class="option-input">
+                        <input type="checkbox" class="correct-answer-checkbox" title="Als korrekte Antwort markieren">
                         <input type="text" class="option-text" placeholder="Antwortmöglichkeit 1">
-                     </div>
-                     <div class="option-input">
+                        <button type="button" class="remove-option-btn danger icon-btn">-</button>
+                    </div>
+                    <div class="option-input">
+                        <input type="checkbox" class="correct-answer-checkbox" title="Als korrekte Antwort markieren">
                         <input type="text" class="option-text" placeholder="Antwortmöglichkeit 2">
-                     </div>
+                        <button type="button" class="remove-option-btn danger icon-btn">-</button>
+                    </div>
                 </div>
                 <button type="button" class="add-option-btn secondary icon-btn">+</button>
                 <div class="question-actions">
@@ -531,13 +544,18 @@
             });
         }
 
-        function addOption(questionBlock) {
+        function addOption(questionBlock, optionData = { text: '', correct: false }) {
             const optionsContainer = questionBlock.querySelector('.options-container');
             const optionCount = optionsContainer.children.length + 1;
             const newOption = document.createElement('div');
             newOption.className = 'option-input';
+
+            const placeholderText = `Antwortmöglichkeit ${optionCount}`;
+            const isChecked = optionData.correct ? 'checked' : '';
+
             newOption.innerHTML = `
-                <input type="text" class="option-text" placeholder="Antwortmöglichkeit ${optionCount}">
+                <input type="checkbox" class="correct-answer-checkbox" title="Als korrekte Antwort markieren" ${isChecked}>
+                <input type="text" class="option-text" placeholder="${placeholderText}" value="${optionData.text || ''}">
                 <button type="button" class="remove-option-btn danger icon-btn">-</button>
             `;
             optionsContainer.appendChild(newOption);
@@ -592,16 +610,17 @@
             for (const block of questionBlocks) {
                 const text = block.querySelector('.question-text').value.trim();
                 const type = block.querySelector('.question-type').value;
-                if (!text) continue; // Leere Fragen ignorieren
+                if (!text) continue;
 
                 const question = { text, type, options: [] };
 
                 if (type === 'mc' || type === 'mca') {
-                    const optionInputs = block.querySelectorAll('.option-text');
-                    optionInputs.forEach(input => {
-                        const optionText = input.value.trim();
+                    const optionDivs = block.querySelectorAll('.option-input');
+                    optionDivs.forEach(div => {
+                        const optionText = div.querySelector('.option-text').value.trim();
+                        const isCorrect = div.querySelector('.correct-answer-checkbox').checked;
                         if (optionText) {
-                            question.options.push(optionText);
+                            question.options.push({ text: optionText, correct: isCorrect });
                         }
                     });
                 }
@@ -653,9 +672,12 @@
                     const optionsContainer = newBlock.querySelector('.options-container');
                     optionsContainer.innerHTML = ''; // Standard-Optionen entfernen
                     q.options.forEach(opt => {
-                        addOption(newBlock);
-                        const optionInputs = optionsContainer.querySelectorAll('.option-text');
-                        optionInputs[optionInputs.length - 1].value = opt;
+                        // Rückwärtskompatibilität: Wenn opt nur ein String ist
+                        if (typeof opt === 'string') {
+                            addOption(newBlock, { text: opt, correct: false });
+                        } else {
+                            addOption(newBlock, opt);
+                        }
                     });
                 }
             });
@@ -684,45 +706,27 @@
         templateFileInput.addEventListener('change', loadTemplateFromFile);
 
         createSurveyBtn.addEventListener('click', async () => {
-            const title = document.getElementById('survey-title').value.trim();
-            if (!title) {
+            const surveyData = getSurveyDataFromForm();
+
+            if (!surveyData.title) {
                 alert("Bitte geben Sie einen Titel für die Umfrage ein.");
                 return;
             }
-
-            const questions = [];
-            const questionBlocks = document.querySelectorAll('.question-block');
-            if(questionBlocks.length === 0){
+            if (surveyData.questions.length === 0) {
                 alert("Bitte fügen Sie mindestens eine Frage hinzu.");
                 return;
             }
 
-            for (const block of questionBlocks) {
-                const text = block.querySelector('.question-text').value.trim();
-                const type = block.querySelector('.question-type').value;
-
-                if (!text) {
+            // Validierung für jede Frage
+            for (const q of surveyData.questions) {
+                if (!q.text) {
                     alert("Bitte geben Sie für jede Frage einen Text ein.");
                     return;
                 }
-
-                const question = { id: `q${questions.length + 1}`, text, type };
-
-                if (type === 'mc' || type === 'mca') {
-                    question.options = [];
-                    const optionInputs = block.querySelectorAll('.option-text');
-                    optionInputs.forEach(input => {
-                        const optionText = input.value.trim();
-                        if (optionText) {
-                            question.options.push(optionText);
-                        }
-                    });
-                    if(question.options.length < 2){
-                        alert("Multiple-Choice-Fragen benötigen mindestens zwei Antwortmöglichkeiten.");
-                        return;
-                    }
+                if ((q.type === 'mc' || q.type === 'mca') && q.options.length < 2) {
+                    alert(`Die Frage "${q.text}" benötigt mindestens zwei Antwortmöglichkeiten.`);
+                    return;
                 }
-                questions.push(question);
             }
             
             const token = prompt("Bitte geben Sie den geheimen Erstellungs-Token ein, um die Umfrage zu starten:");
@@ -731,11 +735,17 @@
                 return;
             }
 
+            // ID zu den Fragen hinzufügen, da dies serverseitig nicht mehr passiert
+            surveyData.questions.forEach((q, index) => {
+                q.id = `q${index + 1}`;
+            });
+
             try {
+                const payload = { ...surveyData, token };
                 const response = await fetch(API_BASE_URL + 'create_survey.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, questions, token: token })
+                    body: JSON.stringify(payload)
                 });
                 const result = await response.json();
                 if (result.success) {
@@ -770,19 +780,21 @@
 
                     if (q.type === 'mc') {
                         q.options.forEach(option => {
+                            const optionText = (typeof option === 'string') ? option : option.text;
                             questionDiv.innerHTML += `
                                 <label style="display: block; margin-bottom: 10px;">
-                                    <input type="radio" name="${q.id}" value="${option}" required>
-                                    ${option}
+                                    <input type="radio" name="${q.id}" value="${optionText}" required>
+                                    ${optionText}
                                 </label>
                             `;
                         });
                     } else if (q.type === 'mca') {
                         q.options.forEach(option => {
+                             const optionText = (typeof option === 'string') ? option : option.text;
                             questionDiv.innerHTML += `
                                 <label style="display: block; margin-bottom: 10px;">
-                                    <input type="checkbox" name="${q.id}" value="${option}">
-                                    ${option}
+                                    <input type="checkbox" name="${q.id}" value="${optionText}">
+                                    ${optionText}
                                 </label>
                             `;
                         });
@@ -829,6 +841,13 @@
                 const result = await response.json();
 
                 if (!result.success) throw new Error(result.message);
+
+                if (result.isQuiz) {
+                    const scoreFeedback = `Sie haben ${result.score} von ${result.totalCorrect} Fragen korrekt beantwortet.`;
+                    document.getElementById('quiz-score-feedback').textContent = scoreFeedback;
+                } else {
+                    document.getElementById('quiz-score-feedback').textContent = '';
+                }
 
                 document.querySelector('#survey-view .card').classList.add('hidden');
                 document.getElementById('thank-you-message').classList.remove('hidden');
@@ -926,56 +945,67 @@
             pollInterval = setInterval(fetchAndRenderResults, 5000); // Alle 5 Sekunden pollen
         }
         
-        function renderResults(survey, responses){
+        function renderResults(survey, responses) {
             const container = document.getElementById('results-container');
             container.innerHTML = '';
-            
-            if(responses.length === 0){
+
+            if (responses.length === 0) {
                 container.innerHTML = '<div class="loader">Warte auf erste Antworten...</div>';
                 return;
             }
+
+            // Prüfen, ob es sich um ein Quiz handelt (mindestens eine Frage hat eine korrekte Antwort)
+            const isQuiz = survey.questions.some(q =>
+                q.options && q.options.some(opt => typeof opt === 'object' && opt.correct)
+            );
 
             survey.questions.forEach(q => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `<h3>${q.text}</h3>`;
-                
+
                 if (q.type === 'mc' || q.type === 'mca') {
                     const results = {};
-                    q.options.forEach(opt => results[opt] = 0);
-                    
+                    q.options.forEach(opt => {
+                        const optionText = typeof opt === 'string' ? opt : opt.text;
+                        results[optionText] = 0;
+                    });
+
                     let totalVotes = 0;
                     responses.forEach(res => {
                         const answer = res.answers[q.id];
                         if (q.type === 'mca' && Array.isArray(answer)) {
                             answer.forEach(ans => {
-                                if(ans in results){
+                                if (ans in results) {
                                     results[ans]++;
                                     totalVotes++;
                                 }
                             });
-                        } else if(answer in results){
+                        } else if (answer in results) {
                             results[answer]++;
                             totalVotes++;
                         }
                     });
-                    
+
                     q.options.forEach(opt => {
-                       const count = results[opt];
-                       const percentage = totalVotes > 0 ? (count / totalVotes * 100).toFixed(1) : 0;
-                       
-                       card.innerHTML += `
+                        const optionText = typeof opt === 'string' ? opt : opt.text;
+                        const isCorrect = isQuiz && (typeof opt === 'object' && opt.correct);
+                        const count = results[optionText];
+                        const percentage = totalVotes > 0 ? (count / totalVotes * 100).toFixed(1) : 0;
+                        const barColorClass = isQuiz ? (isCorrect ? 'result-bar-correct' : 'result-bar-incorrect') : '';
+
+                        const resultBarHTML = `
                             <div>
-                                <strong>${opt}</strong> (${count} Stimme${count !== 1 ? 'n' : ''})
+                                <strong>${optionText}</strong> (${count} Stimme${count !== 1 ? 'n' : ''})
                             </div>
                             <div class="result-bar-container">
-                                <div class="result-bar" style="width: ${percentage}%;">
+                                <div class="result-bar ${barColorClass}" style="width: ${percentage}%;">
                                     ${percentage > 5 ? (percentage + '%') : ''}
                                 </div>
-                            </div>
-                       `;
+                            </div>`;
+                        card.innerHTML += resultBarHTML;
                     });
-                    
+
                 } else if (q.type === 'text') {
                     const answersDiv = document.createElement('div');
                     responses.forEach(res => {
