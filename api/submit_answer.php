@@ -126,6 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($isQuiz) {
         $newResponse['score'] = $score;
         $newResponse['totalCorrect'] = $totalCorrectPossible;
+
+        // Highscore-Daten hinzufügen, falls vorhanden
+        if (isset($data['nickname']) && isset($data['timeTaken'])) {
+            $newResponse['nickname'] = htmlspecialchars(trim($data['nickname']), ENT_QUOTES, 'UTF-8');
+            $newResponse['timeTaken'] = intval($data['timeTaken']); // Als Ganzzahl speichern
+        }
     }
 
     $responses[] = $newResponse;

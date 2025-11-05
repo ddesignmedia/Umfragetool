@@ -273,6 +273,31 @@
             background-color: #f8f9fa;
             color: #6c757d;
         }
+
+        #highscore-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        #highscore-table th, #highscore-table td {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        #highscore-table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        #highscore-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        #highscore-table tr:hover {
+            background-color: #e9ecef;
+        }
+        #highscore-table .rank {
+            font-weight: bold;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -335,6 +360,7 @@
                      <button id="copy-link-btn">Link kopieren</button>
                 </div>
             </div>
+            <div id="highscore-container"></div>
             <div id="results-container">
                 <div class="loader">Warte auf erste Antworten...</div>
             </div>
@@ -355,6 +381,8 @@
         // --- Globale Variablen ---
         const API_BASE_URL = 'api/'; // Basis-URL für die PHP-Skripte
         let pollInterval = null; // Variable für das Polling-Intervall
+        let quizStartTime = null; // Für Highscore-Zeitmessung
+        let userNickname = null; // Für Highscore-Spitzname
 
         // --- UI Elemente ---
         const views = {
@@ -785,6 +813,25 @@
                 
                 if (survey.error) throw new Error(survey.error);
 
+                // Prüfen, ob es sich um ein Quiz handelt
+                const isQuiz = survey.questions.some(q =>
+                    q.options && q.options.some(opt => typeof opt === 'object' && opt.correct)
+                );
+
+                if (isQuiz) {
+                    userNickname = prompt("Bitte geben Sie Ihren Spitznamen für die Highscore-Liste ein:");
+                    if (!userNickname) {
+                        alert("Die Teilnahme am Quiz erfordert einen Spitznamen. Sie werden zur Startseite weitergeleitet.");
+                        window.location.hash = '';
+                        return;
+                    }
+                    quizStartTime = new Date(); // Startzeit für die Zeitmessung
+                } else {
+                    userNickname = null;
+                    quizStartTime = null;
+                }
+
+
                 document.getElementById('participant-survey-title').innerText = survey.title;
                 const form = document.getElementById('survey-form');
                 form.innerHTML = ''; 
@@ -848,11 +895,19 @@
                 }
              });
              
+             const submissionData = { surveyId, answers };
+             if (quizStartTime && userNickname) {
+                 const endTime = new Date();
+                 const timeTaken = Math.round((endTime - quizStartTime) / 1000); // Zeit in Sekunden
+                 submissionData.nickname = userNickname;
+                 submissionData.timeTaken = timeTaken;
+             }
+
              try {
                 const response = await fetch(API_BASE_URL + 'submit_answer.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ surveyId, answers })
+                    body: JSON.stringify(submissionData)
                 });
                 const result = await response.json();
 
@@ -976,7 +1031,7 @@
                          };
                     }
                     
-                    renderResults(data.survey, data.responses);
+                    renderResults(data.survey, data.responses, data.highscore);
                     
                     views.loading.classList.add('hidden');
                     views.results.classList.remove('hidden');
@@ -992,9 +1047,53 @@
             pollInterval = setInterval(fetchAndRenderResults, 5000); // Alle 5 Sekunden pollen
         }
         
-        function renderResults(survey, responses) {
+        function renderHighscore(highscore) {
+            const container = document.getElementById('highscore-container');
+            container.innerHTML = ''; // Container leeren
+
+            if (!highscore || highscore.length === 0) {
+                return; // Nichts tun, wenn keine Highscore-Daten vorhanden sind
+            }
+
+            let tableHTML = `
+                <div class="card">
+                    <h2>Highscore</h2>
+                    <table id="highscore-table">
+                        <thead>
+                            <tr>
+                                <th>Rang</th>
+                                <th>Spitzname</th>
+                                <th>Punkte</th>
+                                <th>Zeit (Sekunden)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            highscore.forEach((entry, index) => {
+                tableHTML += `
+                    <tr>
+                        <td class="rank">${index + 1}</td>
+                        <td>${entry.nickname}</td>
+                        <td>${entry.score}</td>
+                        <td>${entry.timeTaken}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML = tableHTML;
+        }
+
+        function renderResults(survey, responses, highscore = null) {
             const container = document.getElementById('results-container');
             container.innerHTML = '';
+
+            renderHighscore(highscore);
 
             if (responses.length === 0) {
                 container.innerHTML = '<div class="loader">Warte auf erste Antworten...</div>';
