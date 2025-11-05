@@ -1,0 +1,18 @@
+{
+    "id": "1234567890abcdef",
+    "title": "Test Survey",
+    "questions": [
+        {
+            "id": "q1",
+            "text": "What is your favorite color?",
+            "type": "mc",
+            "options": [
+                "Red",
+                "Green",
+                "Blue"
+            ]
+        }
+    ],
+    "createdAt": "2025-11-05T14:55:00Z",
+    "paused": false
+}
