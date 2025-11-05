@@ -269,6 +269,10 @@
         .active-surveys-list .survey-title {
             font-weight: 500;
         }
+        .active-surveys-list li.paused {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -336,6 +340,7 @@
             </div>
              <div class="card" style="text-align: center;">
                 <button id="export-pdf-btn">Ergebnisse als PDF speichern</button>
+                <button id="pause-survey-results-btn" class="secondary">Umfrage pausieren</button>
                 <button id="delete-survey-btn" class="danger">Umfrage beenden & löschen</button>
              </div>
         </div>
@@ -421,11 +426,15 @@
 
                 surveys.forEach(survey => {
                     const li = document.createElement('li');
+                    if (survey.paused) {
+                        li.classList.add('paused');
+                    }
                     li.innerHTML = `
                         <span class="survey-title">${survey.title}</span>
                         <div>
                             <button type="button" data-survey-id="${survey.id}" class="clone-survey-btn secondary icon-btn">📋</button>
-                            <button type="button" data-survey-id="${survey.id}" class="view-results-btn success icon-btn">▶️</button>
+                            <button type="button" data-survey-id="${survey.id}" data-paused="${survey.paused}" class="pause-survey-btn secondary icon-btn">${survey.paused ? '▶️' : '⏸️'}</button>
+                            <button type="button" data-survey-id="${survey.id}" class="view-results-btn success icon-btn">📊</button>
                             <button type="button" data-survey-id="${survey.id}" class="delete-active-survey-btn danger icon-btn">🗑️</button>
                         </div>
                     `;
@@ -444,6 +453,13 @@
                     li.querySelector('.clone-survey-btn').addEventListener('click', (event) => {
                         const surveyId = event.currentTarget.dataset.surveyId;
                         cloneSurvey(surveyId);
+                    });
+
+                    li.querySelector('.pause-survey-btn').addEventListener('click', async (event) => {
+                        const surveyId = event.currentTarget.dataset.surveyId;
+                        const isPaused = event.currentTarget.dataset.paused === 'true';
+                        await togglePauseSurvey(surveyId, !isPaused);
+                        loadAndDisplayActiveSurveys();
                     });
 
                     activeSurveysList.appendChild(li);
@@ -898,6 +914,30 @@
                 console.error("Fehler beim Löschen der Umfrage:", error);
             }
         }
+
+        async function togglePauseSurvey(surveyId, pauseStatus) {
+            const token = prompt("Bitte geben Sie den geheimen Pause-Token ein:");
+            if (!token) {
+                alert("Vorgang abgebrochen. Kein Token eingegeben.");
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE_URL + 'pause_survey.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ surveyId, paused: pauseStatus, token })
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.message || 'Unbekannter Fehler');
+                }
+            } catch (error) {
+                alert('Fehler beim Ändern des Umfragestatus: ' + error.message);
+                console.error(error);
+            }
+        }
         
         async function showResultsView(surveyId) {
             views.loading.classList.remove('hidden');
@@ -923,10 +963,17 @@
 
                     if (data.error) throw new Error(data.error);
                     
-                    if (document.getElementById('results-survey-title').innerText === 'Live-Ergebnisse') {
+                    if (document.getElementById('results-survey-title').innerText === 'Live-Ergebnisse' || data.survey.paused) {
                          document.getElementById('results-survey-title').innerText = `Live-Ergebnisse: ${data.survey.title}`;
                          exportPdfBtn.onclick = () => exportResultsAsPDF(data.survey.title);
                          deleteSurveyBtn.onclick = () => deleteSurvey(surveyId);
+                         const pauseBtn = document.getElementById('pause-survey-results-btn');
+                         pauseBtn.textContent = data.survey.paused ? 'Umfrage fortsetzen' : 'Umfrage pausieren';
+                         pauseBtn.onclick = async () => {
+                            await togglePauseSurvey(surveyId, !data.survey.paused);
+                            // We need to refetch the data to get the updated paused status
+                            fetchAndRenderResults();
+                         };
                     }
                     
                     renderResults(data.survey, data.responses);
