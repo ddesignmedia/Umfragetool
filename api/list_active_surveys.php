@@ -27,7 +27,8 @@ foreach ($files as $file) {
         if (isset($surveyData['title'])) {
             $activeSurveys[] = [
                 'id' => $surveyId,
-                'title' => $surveyData['title']
+                'title' => $surveyData['title'],
+                'paused' => isset($surveyData['paused']) ? $surveyData['paused'] : false
             ];
         }
     }

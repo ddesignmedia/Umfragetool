@@ -46,7 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'id' => $surveyId,
         'title' => htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8'),
         'questions' => $data['questions'],
-        'createdAt' => date(DATE_ISO8601)
+        'createdAt' => date(DATE_ISO8601),
+        'paused' => false
     ];
 
     // Sanitize question data

@@ -29,6 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Überprüfen, ob die Umfrage pausiert ist
+    $surveyData = json_decode(file_get_contents($surveyFilePath), true);
+    if (isset($surveyData['paused']) && $surveyData['paused']) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Diese Umfrage ist derzeit pausiert und akzeptiert keine neuen Antworten.']);
+        exit;
+    }
+
     $answersFilePath = $dataDir . '/answers_' . $surveyId . '.json';
     $responses = [];
 
