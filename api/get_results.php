@@ -31,8 +31,47 @@ if (file_exists($answersFilePath)) {
     $responses = json_decode($answersJson, true);
 }
 
-// Daten kombinieren und zurücksenden
-echo json_encode([
+// Prüfen, ob es sich um ein Quiz handelt
+$isQuiz = false;
+foreach ($surveyData['questions'] as $question) {
+    if (isset($question['options'])) {
+        foreach ($question['options'] as $option) {
+            if (is_array($option) && !empty($option['correct'])) {
+                $isQuiz = true;
+                break 2;
+            }
+        }
+    }
+}
+
+$payload = [
     'survey' => $surveyData,
     'responses' => $responses
-]);
+];
+
+if ($isQuiz) {
+    $highscore = [];
+    foreach ($responses as $response) {
+        if (isset($response['nickname']) && isset($response['score']) && isset($response['timeTaken'])) {
+            $highscore[] = [
+                'nickname' => $response['nickname'],
+                'score' => $response['score'],
+                'timeTaken' => $response['timeTaken']
+            ];
+        }
+    }
+
+    // Highscore sortieren: primär nach Score (absteigend), sekundär nach Zeit (aufsteigend)
+    usort($highscore, function ($a, $b) {
+        if ($a['score'] == $b['score']) {
+            return $a['timeTaken'] <=> $b['timeTaken'];
+        }
+        return $b['score'] <=> $a['score'];
+    });
+
+    $payload['highscore'] = $highscore;
+}
+
+
+// Daten kombinieren und zurücksenden
+echo json_encode($payload);
