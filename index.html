@@ -344,6 +344,33 @@
             width: auto;
             margin-right: 10px;
         }
+        .highscore-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        #highscore-card:-webkit-full-screen {
+            background-color: white;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #highscore-card:fullscreen {
+            background-color: white;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #highscore-card:fullscreen h2 {
+            font-size: 2.5em;
+        }
+        #highscore-card:fullscreen #highscore-table {
+            font-size: 1.5em;
+        }
     </style>
 </head>
 <body>
@@ -1147,29 +1174,15 @@
         
         function renderHighscore(highscore) {
             const container = document.getElementById('highscore-container');
-            container.innerHTML = ''; // Container leeren
 
             if (!highscore || highscore.length === 0) {
-                return; // Nichts tun, wenn keine Highscore-Daten vorhanden sind
+                container.innerHTML = ''; // Leeren, wenn keine Highscore-Daten vorhanden sind
+                return;
             }
 
-            let tableHTML = `
-                <div class="card">
-                    <h2>Highscore</h2>
-                    <table id="highscore-table">
-                        <thead>
-                            <tr>
-                                <th>Rang</th>
-                                <th>Spitzname</th>
-                                <th>Punkte</th>
-                                <th>Zeit (Sekunden)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
+            let rowsHTML = '';
             highscore.forEach((entry, index) => {
-                tableHTML += `
+                rowsHTML += `
                     <tr>
                         <td class="rank">${index + 1}</td>
                         <td>${entry.nickname}</td>
@@ -1179,12 +1192,51 @@
                 `;
             });
 
-            tableHTML += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            container.innerHTML = tableHTML;
+            const existingCard = document.getElementById('highscore-card');
+
+            if (existingCard) {
+                // Wenn die Karte bereits existiert (z.B. im Vollbildmodus), nur den Tabelleninhalt aktualisieren
+                const tableBody = existingCard.querySelector('#highscore-table tbody');
+                tableBody.innerHTML = rowsHTML;
+            } else {
+                // Andernfalls die gesamte Karte neu erstellen
+                let cardHTML = `
+                    <div class="card" id="highscore-card">
+                        <div class="highscore-header">
+                            <h2>Highscore</h2>
+                            <button id="fullscreen-btn" class="secondary icon-btn">⛶</button>
+                        </div>
+                        <table id="highscore-table">
+                            <thead>
+                                <tr>
+                                    <th>Rang</th>
+                                    <th>Spitzname</th>
+                                    <th>Punkte</th>
+                                    <th>Zeit (Sekunden)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHTML}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.innerHTML = cardHTML;
+
+                // Event Listener für den Vollbild-Button nur beim ersten Erstellen hinzufügen
+                document.getElementById('fullscreen-btn').addEventListener('click', () => {
+                    const highscoreCard = document.getElementById('highscore-card');
+                    if (!document.fullscreenElement) {
+                        highscoreCard.requestFullscreen().catch(err => {
+                            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                        });
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        }
+                    }
+                });
+            }
         }
 
         function renderResults(survey, responses, highscore = null) {
