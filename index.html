@@ -298,6 +298,36 @@
             font-weight: bold;
             text-align: center;
         }
+
+        #star-rating {
+            font-size: 2.5em;
+            color: #ffc107; /* Gold color for stars */
+            margin-bottom: 15px;
+        }
+
+        .star.filled {
+            content: '★';
+        }
+
+        .star.empty {
+            content: '☆';
+        }
+
+        .json-import-container {
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        #json-template-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: monospace;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -323,6 +353,12 @@
                 <button id="save-template-btn" class="secondary">Vorlage speichern</button>
                 <button id="load-template-btn" class="secondary">Vorlage laden</button>
                 <input type="file" id="template-file-input" class="hidden" accept=".json">
+
+                <div class="json-import-container">
+                    <p>Oder fügen Sie hier direkt JSON-Inhalt ein:</p>
+                    <textarea id="json-template-input" rows="5" placeholder="Fügen Sie hier den JSON-Code Ihrer Umfragevorlage ein..."></textarea>
+                    <button id="load-from-text-btn" class="secondary">Aus Text laden</button>
+                </div>
                 <button id="create-survey-btn" style="float: right;">Umfrage starten</button>
             </div>
 
@@ -344,6 +380,8 @@
             </div>
              <div id="thank-you-message" class="card hidden" style="text-align: center;">
                 <h3>Vielen Dank für Ihre Teilnahme!</h3>
+                <h4 id="quiz-title-feedback"></h4>
+                <div id="star-rating"></div>
                 <p id="quiz-score-feedback"></p>
             </div>
         </div>
@@ -749,6 +787,20 @@
         loadTemplateBtn.addEventListener('click', () => templateFileInput.click());
         templateFileInput.addEventListener('change', loadTemplateFromFile);
 
+        document.getElementById('load-from-text-btn').addEventListener('click', () => {
+            const jsonInput = document.getElementById('json-template-input').value.trim();
+            if (!jsonInput) {
+                alert("Bitte fügen Sie den JSON-Inhalt in das Textfeld ein.");
+                return;
+            }
+            try {
+                const data = JSON.parse(jsonInput);
+                populateFormWithTemplate(data);
+            } catch (error) {
+                alert('Fehler beim Parsen des JSON: ' + error.message);
+            }
+        });
+
         createSurveyBtn.addEventListener('click', async () => {
             const surveyData = getSurveyDataFromForm();
 
@@ -916,8 +968,34 @@
                 if (result.isQuiz) {
                     const scoreFeedback = `Sie haben ${result.score} von ${result.totalCorrect} Fragen korrekt beantwortet.`;
                     document.getElementById('quiz-score-feedback').textContent = scoreFeedback;
+
+                    const percentage = result.totalCorrect > 0 ? (result.score / result.totalCorrect) * 100 : 0;
+
+                    let title = '';
+                    if (percentage >= 100) title = "Du bist Legendär!";
+                    else if (percentage >= 80) title = "Du bist Episch";
+                    else if (percentage >= 60) title = "Du bist Besonders";
+                    else if (percentage >= 40) title = "Du bist wie du bist ;-)";
+                    else if (percentage >= 20) title = "Noob";
+                    else title = "Du bist trotzdem ein guter Mensch :-)";
+
+                    document.getElementById('quiz-title-feedback').textContent = title;
+
+                    const starRatingContainer = document.getElementById('star-rating');
+                    starRatingContainer.innerHTML = '';
+                    // Using Math.floor is more accurate for the user's requirements (e.g., 20% = 1 star)
+                    const filledStars = Math.floor(percentage / 20);
+                    for (let i = 0; i < 5; i++) {
+                        const star = document.createElement('span');
+                        star.classList.add('star');
+                        star.textContent = i < filledStars ? '★' : '☆';
+                        starRatingContainer.appendChild(star);
+                    }
+
                 } else {
                     document.getElementById('quiz-score-feedback').textContent = '';
+                    document.getElementById('quiz-title-feedback').textContent = '';
+                    document.getElementById('star-rating').innerHTML = '';
                 }
 
                 document.querySelector('#survey-view .card').classList.add('hidden');
