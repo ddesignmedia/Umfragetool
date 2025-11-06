@@ -335,6 +335,15 @@
             align-items: center;
             margin-top: 20px;
         }
+        .highscore-checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .highscore-checkbox-container input {
+            width: auto;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -347,6 +356,10 @@
             <div class="card">
                 <h2>Neue Umfrage erstellen</h2>
                 <input type="text" id="survey-title" placeholder="Titel der Umfrage">
+                <div class="highscore-checkbox-container">
+                    <input type="checkbox" id="highscore-enabled">
+                    <label for="highscore-enabled">Highscoreliste aktivieren</label>
+                </div>
                 <div id="questions-container"></div>
 
                 <!-- Vorlagen Sektion -->
@@ -814,6 +827,7 @@
 
         createSurveyBtn.addEventListener('click', async () => {
             const surveyData = getSurveyDataFromForm();
+            surveyData.highscoreEnabled = document.getElementById('highscore-enabled').checked;
 
             if (!surveyData.title) {
                 alert("Bitte geben Sie einen Titel für die Umfrage ein.");
@@ -876,15 +890,10 @@
                 
                 if (survey.error) throw new Error(survey.error);
 
-                // Prüfen, ob es sich um ein Quiz handelt
-                const isQuiz = survey.questions.some(q =>
-                    q.options && q.options.some(opt => typeof opt === 'object' && opt.correct)
-                );
-
-                if (isQuiz) {
+                if (survey.highscoreEnabled) {
                     userNickname = prompt("Bitte geben Sie Ihren Spitznamen für die Highscore-Liste ein:");
                     if (!userNickname) {
-                        alert("Die Teilnahme am Quiz erfordert einen Spitznamen. Sie werden zur Startseite weitergeleitet.");
+                        alert("Für diese Umfrage ist ein Spitzname erforderlich. Du wirst zur Startseite weitergeleitet.");
                         window.location.hash = '';
                         return;
                     }
@@ -1182,7 +1191,11 @@
             const container = document.getElementById('results-container');
             container.innerHTML = '';
 
-            renderHighscore(highscore);
+            if (survey.highscoreEnabled) {
+                renderHighscore(highscore);
+            } else {
+                document.getElementById('highscore-container').innerHTML = '';
+            }
 
             if (responses.length === 0) {
                 container.innerHTML = '<div class="loader">Warte auf erste Antworten...</div>';
