@@ -47,7 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'title' => htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8'),
         'questions' => $data['questions'],
         'createdAt' => date(DATE_ISO8601),
-        'paused' => false
+        'paused' => false,
+        'highscoreEnabled' => isset($data['highscoreEnabled']) && $data['highscoreEnabled'] === true
     ];
 
     // Sanitize question data

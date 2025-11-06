@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danke für dein Feedback</title>
+    <title>Danke für deine Teilnahme</title>
     <!-- Einbindung der Bibliotheken für PDF-Export und QR-Code -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -328,18 +328,38 @@
             font-family: monospace;
             margin-bottom: 10px;
         }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .highscore-checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .highscore-checkbox-container input {
+            width: auto;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Danke für dein Feedback</h1>
+        <h1>Danke für deine Teilnahme</h1>
 
         <!-- Ansicht zum Erstellen der Umfrage -->
         <div id="create-view">
             <div class="card">
                 <h2>Neue Umfrage erstellen</h2>
                 <input type="text" id="survey-title" placeholder="Titel der Umfrage">
+                <div class="highscore-checkbox-container">
+                    <input type="checkbox" id="highscore-enabled">
+                    <label for="highscore-enabled">Highscoreliste aktivieren</label>
+                </div>
                 <div id="questions-container"></div>
 
                 <!-- Vorlagen Sektion -->
@@ -350,8 +370,6 @@
                     </ul>
                 </div>
 
-                <button id="save-template-btn" class="secondary">Vorlage speichern</button>
-                <button id="load-template-btn" class="secondary">Vorlage laden</button>
                 <input type="file" id="template-file-input" class="hidden" accept=".json">
 
                 <div class="json-import-container">
@@ -359,7 +377,14 @@
                     <textarea id="json-template-input" rows="5" placeholder="Fügen Sie hier den JSON-Code Ihrer Umfragevorlage ein..."></textarea>
                     <button id="load-from-text-btn" class="secondary">Aus Text laden</button>
                 </div>
-                <button id="create-survey-btn" style="float: right;">Umfrage starten</button>
+
+                <div class="card-footer">
+                    <div>
+                        <button id="save-template-btn" class="secondary">Vorlage speichern</button>
+                        <button id="load-template-btn" class="secondary">Vorlage laden</button>
+                    </div>
+                    <button id="create-survey-btn">Umfrage starten</button>
+                </div>
             </div>
 
             <!-- Bereich für aktive Umfragen -->
@@ -379,7 +404,6 @@
                 <button id="submit-survey-btn">Antworten absenden</button>
             </div>
              <div id="thank-you-message" class="card hidden" style="text-align: center;">
-                <h3>Vielen Dank für Ihre Teilnahme!</h3>
                 <h4 id="quiz-title-feedback"></h4>
                 <div id="star-rating"></div>
                 <p id="quiz-score-feedback"></p>
@@ -803,6 +827,7 @@
 
         createSurveyBtn.addEventListener('click', async () => {
             const surveyData = getSurveyDataFromForm();
+            surveyData.highscoreEnabled = document.getElementById('highscore-enabled').checked;
 
             if (!surveyData.title) {
                 alert("Bitte geben Sie einen Titel für die Umfrage ein.");
@@ -865,15 +890,10 @@
                 
                 if (survey.error) throw new Error(survey.error);
 
-                // Prüfen, ob es sich um ein Quiz handelt
-                const isQuiz = survey.questions.some(q =>
-                    q.options && q.options.some(opt => typeof opt === 'object' && opt.correct)
-                );
-
-                if (isQuiz) {
+                if (survey.highscoreEnabled) {
                     userNickname = prompt("Bitte geben Sie Ihren Spitznamen für die Highscore-Liste ein:");
                     if (!userNickname) {
-                        alert("Die Teilnahme am Quiz erfordert einen Spitznamen. Sie werden zur Startseite weitergeleitet.");
+                        alert("Für diese Umfrage ist ein Spitzname erforderlich. Du wirst zur Startseite weitergeleitet.");
                         window.location.hash = '';
                         return;
                     }
@@ -966,7 +986,7 @@
                 if (!result.success) throw new Error(result.message);
 
                 if (result.isQuiz) {
-                    const scoreFeedback = `Sie haben ${result.score} von ${result.totalCorrect} Fragen korrekt beantwortet.`;
+                    const scoreFeedback = `Du hast ${result.score} von ${result.totalCorrect} Fragen korrekt beantwortet.`;
                     document.getElementById('quiz-score-feedback').textContent = scoreFeedback;
 
                     const percentage = result.totalCorrect > 0 ? (result.score / result.totalCorrect) * 100 : 0;
@@ -974,10 +994,10 @@
                     let title = '';
                     if (percentage >= 100) title = "Du bist Legendär!";
                     else if (percentage >= 80) title = "Du bist Episch";
-                    else if (percentage >= 60) title = "Du bist Besonders";
-                    else if (percentage >= 40) title = "Du bist wie du bist ;-)";
+                    else if (percentage >= 60) title = "Das war solide";
+                    else if (percentage >= 40) title = "Just made it";
                     else if (percentage >= 20) title = "Noob";
-                    else title = "Du bist trotzdem ein guter Mensch :-)";
+                    else title = "Fail";
 
                     document.getElementById('quiz-title-feedback').textContent = title;
 
@@ -1171,7 +1191,11 @@
             const container = document.getElementById('results-container');
             container.innerHTML = '';
 
-            renderHighscore(highscore);
+            if (survey.highscoreEnabled) {
+                renderHighscore(highscore);
+            } else {
+                document.getElementById('highscore-container').innerHTML = '';
+            }
 
             if (responses.length === 0) {
                 container.innerHTML = '<div class="loader">Warte auf erste Antworten...</div>';

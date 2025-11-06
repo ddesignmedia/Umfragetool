@@ -31,30 +31,18 @@ if (file_exists($answersFilePath)) {
     $responses = json_decode($answersJson, true);
 }
 
-// Prüfen, ob es sich um ein Quiz handelt
-$isQuiz = false;
-foreach ($surveyData['questions'] as $question) {
-    if (isset($question['options'])) {
-        foreach ($question['options'] as $option) {
-            if (is_array($option) && !empty($option['correct'])) {
-                $isQuiz = true;
-                break 2;
-            }
-        }
-    }
-}
-
 $payload = [
     'survey' => $surveyData,
     'responses' => $responses
 ];
 
-if ($isQuiz) {
+// Highscore nur berechnen, wenn für diese Umfrage aktiviert
+if (isset($surveyData['highscoreEnabled']) && $surveyData['highscoreEnabled']) {
     $highscore = [];
     foreach ($responses as $response) {
         if (isset($response['nickname']) && isset($response['score']) && isset($response['timeTaken'])) {
             $highscore[] = [
-                'nickname' => $response['nickname'],
+                'nickname' => htmlspecialchars($response['nickname']),
                 'score' => $response['score'],
                 'timeTaken' => $response['timeTaken']
             ];
