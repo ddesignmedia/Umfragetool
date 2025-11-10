@@ -38,18 +38,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $answersFilePath = $dataDir . '/answers_' . $surveyId . '.json';
-    $responses = [];
+    $isQuiz = false;
+    $score = 0;
+    $totalCorrectPossible = 0;
 
-    // Vorhandene Antworten lesen (falls die Datei existiert)
-    if (file_exists($answersFilePath)) {
-        $fileHandleRead = fopen($answersFilePath, 'r');
-        if (flock($fileHandleRead, LOCK_SH)) { // Shared lock zum Lesen
-            $existingContent = fread($fileHandleRead, filesize($answersFilePath) ?: 1);
-            $responses = json_decode($existingContent, true) ?: [];
-            flock($fileHandleRead, LOCK_UN);
-        }
-        fclose($fileHandleRead);
+    // --- Atomarer Lese-Änderungs-Schreibvorgang ---
+    $fileHandle = fopen($answersFilePath, 'c+');
+    if (!$fileHandle) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Antwortdatei konnte nicht geöffnet werden.']);
+        exit;
     }
+
+    // Exklusive Sperre für den gesamten Vorgang anfordern
+    if (!flock($fileHandle, LOCK_EX)) {
+        fclose($fileHandle);
+        http_response_code(503);
+        echo json_encode(['success' => false, 'message' => 'Server ist überlastet, bitte versuchen Sie es später erneut.']);
+        exit;
+    }
+
+    // Vorhandene Antworten lesen
+    $existingContent = stream_get_contents($fileHandle);
+    $responses = json_decode($existingContent, true) ?: [];
 
     // Die empfangenen Antworten serverseitig bereinigen, um XSS zu verhindern
     $sanitizedAnswers = [];
@@ -72,16 +83,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Lade die Umfragedaten, um die korrekten Antworten zu überprüfen
     $surveyJson = file_get_contents($surveyFilePath);
     $surveyData = json_decode($surveyJson, true);
-    $isQuiz = false;
-    $score = 0;
-    $totalCorrectPossible = 0;
 
     foreach ($surveyData['questions'] as $question) {
         $isMcQuestion = in_array($question['type'], ['mc', 'mca']);
         $hasCorrectAnswer = false;
         if ($isMcQuestion) {
             foreach ($question['options'] as $option) {
-                if (is_array($option) && $option['correct']) {
+                if (is_array($option) && isset($option['correct']) && $option['correct']) {
                     $hasCorrectAnswer = true;
                     $isQuiz = true;
                     break;
@@ -97,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $correctAnswers = [];
         foreach ($question['options'] as $option) {
-            if (is_array($option) && $option['correct']) {
+            if (is_array($option) && isset($option['correct']) && $option['correct']) {
                 $correctAnswers[] = $option['text'];
             }
         }
@@ -127,21 +135,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newResponse['score'] = $score;
         $newResponse['totalCorrect'] = $totalCorrectPossible;
 
-        // Highscore-Daten hinzufügen, falls vorhanden
         if (isset($data['nickname']) && isset($data['timeTaken'])) {
             $newResponse['nickname'] = htmlspecialchars(trim($data['nickname']), ENT_QUOTES, 'UTF-8');
-            $newResponse['timeTaken'] = intval($data['timeTaken']); // Als Ganzzahl speichern
+            $newResponse['timeTaken'] = intval($data['timeTaken']);
         }
     }
 
     $responses[] = $newResponse;
 
-    $fileHandleWrite = fopen($answersFilePath, 'w');
-    if (flock($fileHandleWrite, LOCK_EX)) {
-        fwrite($fileHandleWrite, json_encode($responses, JSON_PRETTY_PRINT));
-        flock($fileHandleWrite, LOCK_UN);
-    }
-    fclose($fileHandleWrite);
+    // Den neuen Inhalt vorbereiten
+    $newJsonContent = json_encode($responses, JSON_PRETTY_PRINT);
+
+    // Dateizeiger zurücksetzen, neuen Inhalt schreiben und Datei kürzen
+    rewind($fileHandle);
+    fwrite($fileHandle, $newJsonContent);
+    ftruncate($fileHandle, ftell($fileHandle));
+
+    // Sperre freigeben und Datei schließen
+    flock($fileHandle, LOCK_UN);
+    fclose($fileHandle);
 
     $responsePayload = ['success' => true, 'message' => 'Antwort erfolgreich gespeichert.'];
     if ($isQuiz) {
