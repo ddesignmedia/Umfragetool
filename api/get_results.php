@@ -20,16 +20,38 @@ if (!file_exists($surveyFilePath)) {
     exit;
 }
 
-// Umfragedaten laden
-$surveyJson = file_get_contents($surveyFilePath);
-$surveyData = json_decode($surveyJson, true);
-
-// Antwortdaten laden (können noch leer sein)
-$responses = [];
-if (file_exists($answersFilePath)) {
-    $answersJson = file_get_contents($answersFilePath);
-    $responses = json_decode($answersJson, true);
+// Funktion für sicheres Lesen mit Shared Lock
+function readJsonFile($filePath) {
+    if (!file_exists($filePath)) {
+        return null;
+    }
+    $handle = fopen($filePath, 'r');
+    if (!$handle) {
+        return null;
+    }
+    // Shared Lock anfordern, 5 Sekunden warten bei Bedarf
+    if (flock($handle, LOCK_SH, $wouldBlock)) {
+        $content = stream_get_contents($handle);
+        flock($handle, LOCK_UN);
+        fclose($handle);
+        return json_decode($content, true);
+    }
+    fclose($handle);
+    // Wenn die Datei gesperrt ist, signalisieren wir, dass der Dienst beschäftigt ist.
+    http_response_code(503);
+    echo json_encode(['error' => 'Server ist beschäftigt, bitte später erneut versuchen.']);
+    exit;
 }
+
+// Umfragedaten und Antworten sicher laden
+$surveyData = readJsonFile($surveyFilePath);
+if ($surveyData === null && file_exists($surveyFilePath)) { // Fehler beim Lesen der Survey-Datei
+    http_response_code(503);
+    echo json_encode(['error' => 'Konnte Umfragedaten nicht lesen, Server beschäftigt.']);
+    exit;
+}
+
+$responses = readJsonFile($answersFilePath) ?? []; // Antworten können leer sein
 
 $payload = [
     'survey' => $surveyData,

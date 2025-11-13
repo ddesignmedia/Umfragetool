@@ -911,11 +911,39 @@
 
         async function showSurveyView(surveyId) {
             views.loading.classList.remove('hidden');
+
+            // NEU: Prüfen, ob der Benutzer bereits an dieser Umfrage teilgenommen hat
+            const submittedKey = `submitted_${surveyId}`;
+            if (localStorage.getItem(submittedKey)) {
+                hideAllViews();
+                const surveyView = document.getElementById('survey-view');
+                surveyView.classList.remove('hidden');
+                surveyView.innerHTML = `
+                    <div class="card" style="text-align: center;">
+                        <h2>Teilnahme bereits erfolgt</h2>
+                        <p>Du hast bereits an dieser Umfrage teilgenommen.</p>
+                    </div>`;
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_BASE_URL}get_survey.php?id=${surveyId}`);
                 const survey = await response.json();
                 
                 if (survey.error) throw new Error(survey.error);
+
+                 // Alte Inhalte zurücksetzen, um die Standardansicht wiederherzustellen
+                document.getElementById('survey-view').innerHTML = `
+                    <div class="card">
+                        <h2 id="participant-survey-title"></h2>
+                        <form id="survey-form"></form>
+                        <button id="submit-survey-btn">Antworten absenden</button>
+                    </div>
+                    <div id="thank-you-message" class="card hidden" style="text-align: center;">
+                        <h4 id="quiz-title-feedback"></h4>
+                        <div id="star-rating"></div>
+                        <p id="quiz-score-feedback"></p>
+                    </div>`;
 
                 if (survey.highscoreEnabled) {
                     userNickname = prompt("Bitte geben Sie Ihren Spitznamen für die Highscore-Liste ein:");
@@ -978,31 +1006,36 @@
         }
         
         async function submitSurvey(surveyId, questions) {
-             const form = document.getElementById('survey-form');
-             if(!form.checkValidity()) {
+            const submitButton = document.getElementById('submit-survey-btn');
+            const form = document.getElementById('survey-form');
+
+            if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
-             }
-             
-             const formData = new FormData(form);
-             const answers = {};
-             questions.forEach(q => {
-                if (q.type === 'mca') {
-                    answers[q.id] = formData.getAll(q.id);
-                } else {
-                    answers[q.id] = formData.get(q.id);
-                }
-             });
-             
-             const submissionData = { surveyId, answers };
-             if (quizStartTime && userNickname) {
-                 const endTime = new Date();
-                 const timeTaken = Math.round((endTime - quizStartTime) / 1000); // Zeit in Sekunden
-                 submissionData.nickname = userNickname;
-                 submissionData.timeTaken = timeTaken;
-             }
+            }
 
-             try {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sende...';
+
+            try {
+                const formData = new FormData(form);
+                const answers = {};
+                questions.forEach(q => {
+                    if (q.type === 'mca') {
+                        answers[q.id] = formData.getAll(q.id);
+                    } else {
+                        answers[q.id] = formData.get(q.id);
+                    }
+                });
+
+                const submissionData = { surveyId, answers };
+                if (quizStartTime && userNickname) {
+                    const endTime = new Date();
+                    const timeTaken = Math.round((endTime - quizStartTime) / 1000); // Zeit in Sekunden
+                    submissionData.nickname = userNickname;
+                    submissionData.timeTaken = timeTaken;
+                }
+
                 const response = await fetch(API_BASE_URL + 'submit_answer.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1025,12 +1058,10 @@
                     else if (percentage >= 40) title = "Just made it";
                     else if (percentage >= 20) title = "Noob";
                     else title = "Fail";
-
                     document.getElementById('quiz-title-feedback').textContent = title;
 
                     const starRatingContainer = document.getElementById('star-rating');
                     starRatingContainer.innerHTML = '';
-                    // Using Math.floor is more accurate for the user's requirements (e.g., 20% = 1 star)
                     const filledStars = Math.floor(percentage / 20);
                     for (let i = 0; i < 5; i++) {
                         const star = document.createElement('span');
@@ -1047,10 +1078,18 @@
 
                 document.querySelector('#survey-view .card').classList.add('hidden');
                 document.getElementById('thank-you-message').classList.remove('hidden');
-             } catch(error) {
+
+                // NEU: Teilnahme im Local Storage speichern, um erneute Teilnahme zu verhindern
+                const submittedKey = `submitted_${surveyId}`;
+                localStorage.setItem(submittedKey, 'true');
+
+            } catch (error) {
                 console.error("Fehler beim Senden der Antwort:", error);
                 alert("Ihre Antwort konnte nicht gesendet werden: " + error.message);
-             }
+                // Wichtig: Button nur im Fehlerfall wieder aktivieren, damit der User es erneut versuchen kann
+                submitButton.disabled = false;
+                submitButton.textContent = 'Antworten absenden';
+            }
         }
         
         // --- Ansicht: Live-Ergebnisse ---
