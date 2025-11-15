@@ -994,7 +994,10 @@
                     form.appendChild(questionDiv);
                 });
                 
-                submitSurveyBtn.onclick = () => submitSurvey(surveyId, survey.questions);
+                // WICHTIG: Den Button nach dem Neusetzen des HTML neu abrufen und den Listener zuweisen
+                const newSubmitBtn = document.getElementById('submit-survey-btn');
+                newSubmitBtn.onclick = () => submitSurvey(surveyId, survey.questions);
+
                 views.loading.classList.add('hidden');
                 views.survey.classList.remove('hidden');
 
@@ -1071,8 +1074,9 @@
                     }
 
                 } else {
-                    document.getElementById('quiz-score-feedback').textContent = '';
-                    document.getElementById('quiz-title-feedback').textContent = '';
+                    // FIX: Standard-Dankesnachricht für normale Umfragen wieder einfügen
+                    document.getElementById('quiz-title-feedback').textContent = 'Vielen Dank!';
+                    document.getElementById('quiz-score-feedback').textContent = 'Deine Antworten wurden erfolgreich übermittelt.';
                     document.getElementById('star-rating').innerHTML = '';
                 }
 
