@@ -34,8 +34,22 @@ if (!file_exists($surveyFilePath)) {
 $surveyData = json_decode(file_get_contents($surveyFilePath), true);
 $surveyData['paused'] = (bool)$input['paused'];
 
-if (file_put_contents($surveyFilePath, json_encode($surveyData, JSON_PRETTY_PRINT))) {
-    echo json_encode(['success' => true, 'message' => 'Survey status updated.']);
+$tempFilePath = $surveyFilePath . '.tmp';
+
+if (file_put_contents($tempFilePath, json_encode($surveyData, JSON_PRETTY_PRINT))) {
+    // Atomic Rename
+    // Für Windows sicherstellen, dass wir nicht ins Leere laufen, falls Permissions zicken, aber rename ist hier meist okay.
+    if (DIRECTORY_SEPARATOR === '\\' && file_exists($surveyFilePath)) {
+         @unlink($surveyFilePath); 
+    }
+
+    if (rename($tempFilePath, $surveyFilePath)) {
+        echo json_encode(['success' => true, 'message' => 'Survey status updated.']);
+    } else {
+        unlink($tempFilePath);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to move temp file.']);
+    }
 } else {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Failed to update survey status.']);

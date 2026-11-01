@@ -20,16 +20,25 @@ if (!file_exists($surveyFilePath)) {
     exit;
 }
 
-// Umfragedaten laden
-$surveyJson = file_get_contents($surveyFilePath);
-$surveyData = json_decode($surveyJson, true);
-
-// Antwortdaten laden (können noch leer sein)
-$responses = [];
-if (file_exists($answersFilePath)) {
-    $answersJson = file_get_contents($answersFilePath);
-    $responses = json_decode($answersJson, true);
+// Funktion für sicheres Lesen (jetzt ohne Lock, da wir atomar schreiben)
+function readJsonFile($filePath) {
+    if (!file_exists($filePath)) {
+        return null;
+    }
+    // file_get_contents ist bei atomic writes sicher genug für diesen Anwendungsfall
+    $content = file_get_contents($filePath);
+    return $content ? json_decode($content, true) : null;
 }
+
+// Umfragedaten und Antworten sicher laden
+$surveyData = readJsonFile($surveyFilePath);
+if ($surveyData === null && file_exists($surveyFilePath)) { // Fehler beim Lesen der Survey-Datei
+    http_response_code(503);
+    echo json_encode(['error' => 'Konnte Umfragedaten nicht lesen, Server beschäftigt.']);
+    exit;
+}
+
+$responses = readJsonFile($answersFilePath) ?? []; // Antworten können leer sein
 
 $payload = [
     'survey' => $surveyData,
@@ -44,7 +53,9 @@ if (isset($surveyData['highscoreEnabled']) && $surveyData['highscoreEnabled']) {
             $highscore[] = [
                 'nickname' => htmlspecialchars($response['nickname']),
                 'score' => $response['score'],
-                'timeTaken' => $response['timeTaken']
+                'timeTaken' => $response['timeTaken'],
+                'currentQuestionIndex' => $response['currentQuestionIndex'] ?? null,
+                'totalQuestions' => $response['totalQuestions'] ?? null
             ];
         }
     }

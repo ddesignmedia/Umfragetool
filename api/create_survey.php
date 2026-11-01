@@ -11,77 +11,144 @@ checkRateLimit('create_survey');
 // Stellt sicher, dass das data-Verzeichnis existiert
 $dataDir = __DIR__ . '/data';
 if (!is_dir($dataDir)) {
-    // 0775 ist eine sicherere Berechtigung als 0777.
-    // Sie erlaubt dem Eigentümer (user) und der Gruppe (group) Lese-, Schreib- und Ausführrechte,
-    // während andere (world) nur Lese- und Ausführrechte haben.
-    // Dies ist nützlich in Umgebungen, in denen der Webserver-Benutzer (z.B. www-data)
-    // in derselben Gruppe ist wie der Datei-Eigentümer.
     mkdir($dataDir, 0775, true);
 }
 
-// Nur POST-Anfragen erlauben
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Eingehende JSON-Daten auslesen
-    $input = file_get_contents('php://input');
-    $data = json_decode($input, true);
+// Fehler abfangen und als JSON zurückgeben
+set_error_handler(function($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) return;
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
 
-    // Token-Validierung
-    if (!isset($data['token']) || $data['token'] !== CREATE_TOKEN) {
-        http_response_code(403); // Forbidden
-        echo json_encode(['success' => false, 'message' => 'Ungültiger oder fehlender Erstellungs-Token.']);
-        exit;
-    }
+ob_start(); // Puffer starten, um versehentliche Ausgaben zu unterdrücken
 
-    // Strenge serverseitige Validierung
-    if (!isValidSurveyData($data)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Ungültige oder unvollständige Umfragedaten.']);
-        exit;
-    }
+try {
+    // --- AUTO-CLEANUP: Löscht Umfragen und Antworten, die älter als 7 Tage sind ---
+    function cleanupOldSurveys($dataDir) {
+        if (!is_dir($dataDir)) return;
+        
+        // Alle Dateien im Verzeichnis prüfen
+        $files = scandir($dataDir);
+        $now = time();
+        $maxAge = 604800; // 7 Tage in Sekunden (7 * 24 * 60 * 60)
 
-    // Eine zufällige, schwer zu erratende ID generieren
-    $surveyId = bin2hex(random_bytes(8));
+        foreach ($files as $file) {
+            $filePath = $dataDir . '/' . $file;
+            if (!is_file($filePath)) continue;
 
-    $surveyData = [
-        'id' => $surveyId,
-        'title' => htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8'),
-        'questions' => $data['questions'],
-        'createdAt' => date(DATE_ISO8601),
-        'paused' => false,
-        'highscoreEnabled' => isset($data['highscoreEnabled']) && $data['highscoreEnabled'] === true
-    ];
-
-    // Sanitize question data
-    foreach ($surveyData['questions'] as &$question) {
-        $question['text'] = htmlspecialchars($question['text'], ENT_QUOTES, 'UTF-8');
-        if (isset($question['options']) && is_array($question['options'])) {
-            foreach ($question['options'] as &$option) {
-                if (is_array($option) && isset($option['text'])) {
-                    $option['text'] = htmlspecialchars($option['text'], ENT_QUOTES, 'UTF-8');
-                    // Ensure 'correct' is a boolean
-                    $option['correct'] = isset($option['correct']) && filter_var($option['correct'], FILTER_VALIDATE_BOOLEAN);
-                } else {
-                    // Backward compatibility for string options
-                    $option = htmlspecialchars($option, ENT_QUOTES, 'UTF-8');
+            // Nicht löschen: Konfigurationsdateien oder .htaccess
+            if ($file === 'rate_limits.json' || $file === 'config.php' || $file === '.htaccess') continue;
+            
+            // Wenn die Datei älter als das maximale Alter ist
+            if ($now - filemtime($filePath) >= $maxAge) {
+                // Wenn es eine Umfrage ist, auch die zugehörigen Antworten, Locks und Temps löschen
+                if (strpos($file, 'survey_') === 0) {
+                    $surveyId = str_replace(['survey_', '.json'], '', $file);
+                    $patterns = [
+                        'answers_' . $surveyId . '.json',
+                        'answers_' . $surveyId . '.lock',
+                        'answers_' . $surveyId . '.json.tmp'
+                    ];
+                    foreach ($patterns as $p) {
+                        $pPath = $dataDir . '/' . $p;
+                        if (file_exists($pPath)) @unlink($pPath);
+                    }
                 }
+                // Auch alleinstehende .lock oder .tmp Dateien löschen, wenn sie alt sind
+                if (strpos($file, '.lock') !== false || strpos($file, '.tmp') !== false) {
+                    @unlink($filePath);
+                }
+                
+                @unlink($filePath);
             }
         }
     }
 
-    $filePath = $dataDir . '/survey_' . $surveyId . '.json';
+    // Cleanup bei Aufruf
+    cleanupOldSurveys($dataDir);
 
-    // Umfrage in eine Datei schreiben
-    if (file_put_contents($filePath, json_encode($surveyData, JSON_PRETTY_PRINT))) {
-        echo json_encode(['success' => true, 'surveyId' => $surveyId]);
+    // Nur POST-Anfragen erlauben
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Eingehende JSON-Daten auslesen
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+
+        // Token-Validierung
+        if (!isset($data['token']) || $data['token'] !== CREATE_TOKEN) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Ungültiger oder fehlender Erstellungs-Token.']);
+            exit;
+        }
+
+        // Strenge serverseitige Validierung
+        if (!isValidSurveyData($data)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Ungültige oder unvollständige Umfragedaten.']);
+            exit;
+        }
+
+        // Eine zufällige, schwer zu erratende ID generieren
+        $surveyId = bin2hex(random_bytes(8));
+
+        $surveyData = [
+            'id' => $surveyId,
+            'title' => htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8'),
+            'questions' => $data['questions'],
+            'createdAt' => date(DATE_ISO8601),
+            'paused' => false,
+            'highscoreEnabled' => isset($data['highscoreEnabled']) && filter_var($data['highscoreEnabled'], FILTER_VALIDATE_BOOLEAN)
+        ];
+
+        // Sanitize question data
+        foreach ($surveyData['questions'] as &$question) {
+            $question['text'] = htmlspecialchars($question['text'], ENT_QUOTES, 'UTF-8');
+            if ($question['type'] === 'slider') {
+                $question['min'] = isset($question['min']) ? intval($question['min']) : 0;
+                $question['max'] = isset($question['max']) ? intval($question['max']) : 10;
+                $question['minLabel'] = isset($question['minLabel']) ? htmlspecialchars($question['minLabel'], ENT_QUOTES, 'UTF-8') : '';
+                $question['maxLabel'] = isset($question['maxLabel']) ? htmlspecialchars($question['maxLabel'], ENT_QUOTES, 'UTF-8') : '';
+            } elseif (isset($question['options']) && is_array($question['options'])) {
+                foreach ($question['options'] as &$option) {
+                    if (is_array($option) && isset($option['text'])) {
+                        $option['text'] = htmlspecialchars($option['text'], ENT_QUOTES, 'UTF-8');
+                        $option['correct'] = isset($option['correct']) && filter_var($option['correct'], FILTER_VALIDATE_BOOLEAN);
+                    } else if (is_string($option)) {
+                        $option = htmlspecialchars($option, ENT_QUOTES, 'UTF-8');
+                    }
+                }
+            }
+        }
+
+        $filePath = $dataDir . '/survey_' . $surveyId . '.json';
+
+        // Umfrage in eine Datei schreiben
+        if (file_put_contents($filePath, json_encode($surveyData, JSON_PRETTY_PRINT))) {
+            ob_end_clean(); // Puffer leeren (falls Warnungen drin waren)
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'surveyId' => $surveyId]);
+        } else {
+            throw new Exception("Datei konnte nicht geschrieben werden: $filePath");
+        }
     } else {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Umfrage konnte nicht gespeichert werden.']);
+        ob_end_clean();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'API ist erreichbar.']);
     }
-} else {
-    // Fallback für andere Methoden als POST (z.B. pre-flight OPTIONS)
-    http_response_code(200);
-    echo json_encode(['success' => true, 'message' => 'API ist erreichbar.']);
+
+} catch (Throwable $e) {
+    ob_end_clean(); // Versehentlichen Output verwerfen
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Serverfehler beim Erstellen der Umfrage: ' . $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ]);
 }
+exit;
 
 function isValidSurveyData($data) {
     if (json_last_error() !== JSON_ERROR_NONE) return false;
@@ -91,7 +158,7 @@ function isValidSurveyData($data) {
     foreach ($data['questions'] as $question) {
         if (!isset($question['id']) || !is_string($question['id']) || trim($question['id']) === '') return false;
         if (!isset($question['text']) || !is_string($question['text']) || trim($question['text']) === '') return false;
-        if (!isset($question['type']) || !in_array($question['type'], ['mc', 'mca', 'text'])) return false;
+        if (!isset($question['type']) || !in_array($question['type'], ['mc', 'mca', 'star', 'text', 'slider'])) return false;
         
         if ($question['type'] === 'mc' || $question['type'] === 'mca') {
             if (!isset($question['options']) || !is_array($question['options']) || count($question['options']) < 2) return false;
@@ -106,6 +173,9 @@ function isValidSurveyData($data) {
                     return false; // Invalid option format
                 }
             }
+        } elseif ($question['type'] === 'slider') {
+            if (isset($question['min']) && !is_numeric($question['min'])) return false;
+            if (isset($question['max']) && !is_numeric($question['max'])) return false;
         }
     }
     return true;

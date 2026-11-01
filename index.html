@@ -1,378 +1,111 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danke für deine Teilnahme</title>
+    <title>Live-Umfrage &amp; Quiz</title>
     <!-- Einbindung der Bibliotheken für PDF-Export und QR-Code -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="js/libs/jspdf.umd.min.js"></script>
+    <script src="js/libs/html2canvas.min.js"></script>
+    <script src="js/libs/qrcode.min.js"></script>
 
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --background-color: #f8f9fa;
-            --surface-color: #ffffff;
-            --text-color: #212529;
-            --border-color: #dee2e6;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            font-family: var(--font-family);
-            background-color: var(--background-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: auto;
-            padding: 20px;
-        }
-
-        .card {
-            background-color: var(--surface-color);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-
-        h1, h2, h3 {
-            color: var(--primary-color);
-            margin-top: 0;
-        }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
-        }
-
-        button.secondary {
-            background-color: var(--secondary-color);
-        }
-
-        button.secondary:hover {
-            background-color: #5a6268;
-        }
-        
-        button.danger {
-            background-color: var(--danger-color);
-        }
-        
-        button.danger:hover {
-            background-color: #c82333;
-        }
-
-        button.success {
-            background-color: var(--success-color);
-        }
-        
-        button.success:hover {
-            background-color: #218838;
-        }
-
-        input[type="text"], select {
+        .progress-container {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-
-        .question-block {
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-        }
-
-        .option-input {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .option-input input {
-            flex-grow: 1;
-            margin-right: 10px;
-        }
-        
-        .result-bar-container {
-            width: 100%;
-            background-color: #e9ecef;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            height: 10px;
             overflow: hidden;
         }
 
-        .result-bar {
-            background-color: var(--primary-color); /* Default color for non-quiz bars */
+        .progress-bar {
+            height: 100%;
+            background-color: #38bdf8;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .highscore-live {
+            color: #10b981;
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-left: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .rank-badge {
+            display: inline-block;
+            width: 24px;
             height: 24px;
             line-height: 24px;
-            color: white;
-            text-align: right;
-            padding-right: 10px;
-            white-space: nowrap;
-            transition: width 0.5s ease-in-out;
-            box-sizing: border-box;
-        }
-
-        .result-bar.result-bar-correct {
-            background-color: var(--success-color);
-        }
-
-        .result-bar.result-bar-incorrect {
-            background-color: var(--danger-color);
-        }
-
-        #results-container .card {
-            margin-bottom: 20px;
-        }
-
-        .hidden {
-            display: none;
-        }
-        
-        .loader {
             text-align: center;
-            font-size: 1.2em;
-            padding: 40px;
-        }
-
-        #share-section {
-            text-align: center;
-            border: 2px dashed var(--primary-color);
-            padding: 20px;
-            border-radius: 12px;
-        }
-        
-        #share-link {
+            border-radius: 50%;
+            background: #eee;
             font-weight: bold;
-            background: #e9ecef;
-            padding: 5px 10px;
-            border-radius: 5px;
-            word-break: break-all;
+            margin-right: 5px;
         }
 
-        #qrcode {
-            margin: 20px auto 0;
-            padding: 10px;
-            background: white;
+        .rank-1 {
+            background: #ffd700;
+        }
+
+        .rank-2 {
+            background: #c0c0c0;
+        }
+
+        .rank-3 {
+            background: #cd7f32;
+        }
+
+        .rank-title {
             display: inline-block;
-        }
-        
-        .text-answer {
-             background-color: #f8f9fa;
-             border-left: 4px solid var(--primary-color);
-             padding: 10px 15px;
-             margin-bottom: 10px;
-             border-radius: 4px;
-        }
-
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            font-size: 20px;
-            line-height: 40px;
-            text-align: center;
-            flex-shrink: 0; /* Verhindert, dass der Button schrumpft */
-        }
-
-        .question-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px; /* Abstand zwischen den Buttons */
-            margin-top: 10px;
-        }
-
-        .templates-container {
-            margin-top: 20px;
-        }
-
-        .templates-toggle {
-            cursor: pointer;
-            font-weight: bold;
-            color: var(--primary-color);
-            display: block;
-            margin-bottom: 10px;
-        }
-
-        .templates-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-        .templates-list li {
-            padding: 8px;
-            cursor: pointer;
+            padding: 2px 8px;
             border-radius: 4px;
-        }
-
-        .templates-list li:hover {
-            background-color: #f1f1f1;
-        }
-
-        .active-surveys-container {
-            margin-top: 30px;
-        }
-
-        .active-surveys-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .active-surveys-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .active-surveys-list .survey-title {
-            font-weight: 500;
-        }
-        .active-surveys-list li.paused {
-            background-color: #f8f9fa;
-            color: #6c757d;
-        }
-
-        #highscore-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        #highscore-table th, #highscore-table td {
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            text-align: left;
-        }
-        #highscore-table th {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        #highscore-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        #highscore-table tr:hover {
-            background-color: #e9ecef;
-        }
-        #highscore-table .rank {
+            font-size: 0.75em;
             font-weight: bold;
-            text-align: center;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
         }
 
-        #star-rating {
-            font-size: 2.5em;
-            color: #ffc107; /* Gold color for stars */
-            margin-bottom: 15px;
+        .title-1 {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
         }
 
-        .star.filled {
-            content: '★';
+        .title-2 {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+            border: 1px solid #a855f7;
         }
 
-        .star.empty {
-            content: '☆';
-        }
-
-        .json-import-container {
-            margin-top: 20px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 20px;
-        }
-
-        #json-template-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-family: monospace;
-            margin-bottom: 10px;
-        }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-        }
-        .highscore-checkbox-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .highscore-checkbox-container input {
-            width: auto;
-            margin-right: 10px;
-        }
-        .highscore-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        #highscore-card:-webkit-full-screen {
-            background-color: white;
-            width: 100%;
-            height: 100%;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        #highscore-card:fullscreen {
-            background-color: white;
-            width: 100%;
-            height: 100%;
-            padding: 20px;
-            box-sizing: border-box;
-            overflow-y: auto;
-        }
-        #highscore-card:fullscreen h2 {
-            font-size: 2.5em;
-        }
-        #highscore-card:fullscreen #highscore-table {
-            font-size: 1.5em;
+        .title-3 {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
         }
     </style>
+
 </head>
+
 <body>
 
     <div class="container">
@@ -401,14 +134,16 @@
 
                 <div class="json-import-container">
                     <p>Oder fügen Sie hier direkt JSON-Inhalt ein:</p>
-                    <textarea id="json-template-input" rows="5" placeholder="Fügen Sie hier den JSON-Code Ihrer Umfragevorlage ein..."></textarea>
+                    <textarea id="json-template-input" rows="5"
+                        placeholder="Fügen Sie hier den JSON-Code Ihrer Umfragevorlage ein..."></textarea>
                     <button id="load-from-text-btn" class="secondary">Aus Text laden</button>
                 </div>
 
                 <div class="card-footer">
-                    <div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button id="save-template-btn" class="secondary">Vorlage speichern</button>
                         <button id="load-template-btn" class="secondary">Vorlage laden</button>
+                        <button id="copy-ai-prompt-btn" class="secondary" title="Kopiert eine Prompt-Anweisung für die KI zur Erstellung passender Test-Vorlagen in die Zwischenablage">🤖 KI-Prompt kopieren</button>
                     </div>
                     <button id="create-survey-btn">Umfrage starten</button>
                 </div>
@@ -430,7 +165,7 @@
                 <form id="survey-form"></form>
                 <button id="submit-survey-btn">Antworten absenden</button>
             </div>
-             <div id="thank-you-message" class="card hidden" style="text-align: center;">
+            <div id="thank-you-message" class="card hidden" style="text-align: center;">
                 <h4 id="quiz-title-feedback"></h4>
                 <div id="star-rating"></div>
                 <p id="quiz-score-feedback"></p>
@@ -442,22 +177,22 @@
             <div class="card">
                 <h2 id="results-survey-title">Live-Ergebnisse</h2>
                 <div id="share-section">
-                     <h3>Teilen Sie diesen Link mit Ihrem Publikum:</h3>
-                     <p id="share-link"></p>
-                     <div id="qrcode"></div>
-                     <br>
-                     <button id="copy-link-btn">Link kopieren</button>
+                    <h3>Teilen Sie diesen Link mit Ihrem Publikum:</h3>
+                    <p id="share-link"></p>
+                    <div id="qrcode"></div>
+                    <br>
+                    <button id="copy-link-btn">Link kopieren</button>
                 </div>
             </div>
             <div id="highscore-container"></div>
             <div id="results-container">
                 <div class="loader">Warte auf erste Antworten...</div>
             </div>
-             <div class="card" style="text-align: center;">
-                <button id="export-pdf-btn">Ergebnisse als PDF speichern</button>
-                <button id="pause-survey-results-btn" class="secondary">Umfrage pausieren</button>
-                <button id="delete-survey-btn" class="danger">Umfrage beenden & löschen</button>
-             </div>
+            <div class="card results-actions">
+                <button id="export-pdf-btn">PDF speichern</button>
+                <button id="pause-survey-results-btn" class="secondary">Pausieren</button>
+                <button id="delete-survey-btn" class="danger">Beenden & löschen</button>
+            </div>
         </div>
 
         <!-- Ladeanzeige -->
@@ -472,6 +207,8 @@
         let pollInterval = null; // Variable für das Polling-Intervall
         let quizStartTime = null; // Für Highscore-Zeitmessung
         let userNickname = null; // Für Highscore-Spitzname
+        let currentQuestionStep = 0; // Aktueller Schritt bei Einzelfragen
+        let activeResponseId = null; // ID der laufenden Antwort-Session
 
         // --- UI Elemente ---
         const views = {
@@ -488,6 +225,7 @@
         const deleteSurveyBtn = document.getElementById('delete-survey-btn');
         const saveTemplateBtn = document.getElementById('save-template-btn');
         const loadTemplateBtn = document.getElementById('load-template-btn');
+        const copyAiPromptBtn = document.getElementById('copy-ai-prompt-btn');
         const templateFileInput = document.getElementById('template-file-input');
         const templatesToggle = document.querySelector('.templates-toggle');
         const templatesList = document.getElementById('templates-list');
@@ -516,7 +254,7 @@
         }
 
         window.addEventListener('hashchange', handleRouting);
-        
+
         // --- Ansicht: Umfrage erstellen ---
 
         let questionCount = 0;
@@ -524,7 +262,7 @@
         function showCreateView() {
             views.create.classList.remove('hidden');
             if (questionCount === 0) { // Nur hinzufügen, wenn noch keine Fragen da sind
-                 addQuestion();
+                addQuestion();
             }
             loadAndDisplayTemplates();
             loadAndDisplayActiveSurveys();
@@ -534,7 +272,7 @@
             try {
                 const response = await fetch(API_BASE_URL + 'list_active_surveys.php');
                 const surveys = await response.json();
-                
+
                 activeSurveysList.innerHTML = ''; // Liste leeren
                 if (surveys.length === 0) {
                     activeSurveysList.innerHTML = '<li>Derzeit sind keine Umfragen aktiv.</li>';
@@ -555,11 +293,11 @@
                             <button type="button" data-survey-id="${survey.id}" class="delete-active-survey-btn danger icon-btn">🗑️</button>
                         </div>
                     `;
-                    
+
                     li.querySelector('.delete-active-survey-btn').addEventListener('click', async (event) => {
                         const surveyId = event.currentTarget.dataset.surveyId;
-                        await deleteSurvey(surveyId, true); 
-                        loadAndDisplayActiveSurveys(); 
+                        await deleteSurvey(surveyId, true);
+                        loadAndDisplayActiveSurveys();
                     });
 
                     li.querySelector('.view-results-btn').addEventListener('click', (event) => {
@@ -591,7 +329,7 @@
             try {
                 const response = await fetch(API_BASE_URL + 'list_templates.php');
                 const templateNames = await response.json();
-                
+
                 templatesList.innerHTML = ''; // Liste leeren
                 if (templateNames.length === 0) {
                     templatesList.innerHTML = '<li>Keine Vorlagen gefunden.</li>';
@@ -630,7 +368,9 @@
                 <select class="question-type" id="question-type-${questionCount}">
                     <option value="mc">Multiple-Choice (eine Antwort)</option>
                     <option value="mca">Multiple-Choice (mehrere Antworten)</option>
+                    <option value="star">Stern-Bewertung (1-5 Sterne)</option>
                     <option value="text">Offener Text</option>
+                    <option value="slider">Schieberegler</option>
                 </select>
                 <div class="options-container">
                     <div class="option-input">
@@ -645,6 +385,30 @@
                     </div>
                 </div>
                 <button type="button" class="add-option-btn secondary icon-btn">+</button>
+                
+                <div class="slider-config-container hidden">
+                    <div class="slider-config-row">
+                        <div class="input-group">
+                            <label>Minimum:</label>
+                            <input type="number" class="slider-min" value="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Maximum:</label>
+                            <input type="number" class="slider-max" value="10">
+                        </div>
+                    </div>
+                    <div class="slider-config-row">
+                        <div class="input-group">
+                            <label>Beschriftung Minimum (optional):</label>
+                            <input type="text" class="slider-min-label" placeholder="z. B. ganz schlecht">
+                        </div>
+                        <div class="input-group">
+                            <label>Beschriftung Maximum (optional):</label>
+                            <input type="text" class="slider-max-label" placeholder="z. B. super">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="question-actions">
                     <button type="button" class="add-sibling-question-btn success icon-btn">+</button>
                     <button type="button" class="remove-question-btn danger icon-btn">🗑️</button>
@@ -659,19 +423,26 @@
             questionBlock.querySelector('.question-type').addEventListener('change', (e) => {
                 const optionsDiv = questionBlock.querySelector('.options-container');
                 const addOptionBtn = questionBlock.querySelector('.add-option-btn');
-                if (e.target.value === 'text') {
+                const sliderConfig = questionBlock.querySelector('.slider-config-container');
+                if (e.target.value === 'text' || e.target.value === 'star' || e.target.value === 'slider') {
                     optionsDiv.classList.add('hidden');
                     addOptionBtn.classList.add('hidden');
                 } else {
                     optionsDiv.classList.remove('hidden');
                     addOptionBtn.classList.remove('hidden');
                 }
+
+                if (e.target.value === 'slider') {
+                    sliderConfig.classList.remove('hidden');
+                } else {
+                    sliderConfig.classList.add('hidden');
+                }
             });
 
             questionBlock.querySelector('.add-option-btn').addEventListener('click', () => {
                 addOption(questionBlock);
             });
-            
+
             questionBlock.querySelector('.remove-question-btn').addEventListener('click', () => {
                 questionBlock.remove();
             });
@@ -696,19 +467,19 @@
                 newOption.remove();
             });
         }
-        
+
         async function cloneSurvey(surveyId) {
             try {
                 // Wir verwenden denselben Endpunkt, der auch zum Ausfüllen der Umfrage für Teilnehmer dient
                 const response = await fetch(`${API_BASE_URL}get_survey.php?id=${surveyId}`);
                 if (!response.ok) throw new Error(`Serverfehler: ${response.statusText}`);
                 const data = await response.json();
-                
+
                 // Wir benennen den Titel um, um klarzustellen, dass es eine Kopie ist
                 data.title = `Kopie von: ${data.title}`;
-                
+
                 populateFormWithTemplate(data);
-                
+
                 // Scrollen Sie zum Anfang der Seite, um das ausgefüllte Formular zu sehen
                 window.scrollTo(0, 0);
                 alert("Die Umfrage wurde als neue Vorlage in das Formular geladen. Sie können sie jetzt bearbeiten und als neue Umfrage starten.");
@@ -719,7 +490,7 @@
         }
 
         // --- Vorlagen-Funktionen ---
-        
+
         async function loadServerTemplate(templateId) {
             try {
                 const response = await fetch(`${API_BASE_URL}get_template.php?id=${templateId}`);
@@ -734,9 +505,10 @@
                 console.error(error);
             }
         }
-        
+
         function getSurveyDataFromForm() {
             const title = document.getElementById('survey-title').value.trim();
+            const highscoreEnabled = document.getElementById('highscore-enabled').checked;
             const questions = [];
             const questionBlocks = document.querySelectorAll('.question-block');
 
@@ -756,10 +528,15 @@
                             question.options.push({ text: optionText, correct: isCorrect });
                         }
                     });
+                } else if (type === 'slider') {
+                    question.min = parseInt(block.querySelector('.slider-min').value) || 0;
+                    question.max = parseInt(block.querySelector('.slider-max').value) || 10;
+                    question.minLabel = block.querySelector('.slider-min-label').value.trim();
+                    question.maxLabel = block.querySelector('.slider-max-label').value.trim();
                 }
                 questions.push(question);
             }
-            return { title, questions };
+            return { title, questions, highscoreEnabled };
         }
 
         function saveTemplate() {
@@ -768,6 +545,9 @@
                 alert("Es gibt nichts zu speichern. Fügen Sie bitte einen Titel oder Fragen hinzu.");
                 return;
             }
+
+            // Sicherstellen, dass die aktuelle Highscore-Einstellung im Template landet
+            surveyData.highscoreEnabled = document.getElementById('highscore-enabled').checked;
 
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(surveyData, null, 2));
             const downloadAnchorNode = document.createElement('a');
@@ -781,11 +561,159 @@
 
         saveTemplateBtn.addEventListener('click', saveTemplate);
 
+        function copyAiPrompt() {
+            const currentTitle = document.getElementById('survey-title').value.trim();
+            const promptTopic = currentTitle ? `Thema: "${currentTitle}"` : `[HIER THEMA, FACH, KLASSENSTUFE ODER INHALTE EINGEBEN]`;
+
+            const promptText = `Du bist ein didaktischer Experte für Unterricht, Leistungsüberprüfung und Umfragen.
+Erstelle für mich ein vollständiges Test-, Quiz- oder Umfrage-Dokument im exakten JSON-Format für unser interaktives Web-Tool.
+
+### FORMAT-REGELN & ROOT-STRUKTUR:
+Das Ergebnis MUSS ein valides JSON-Objekt sein mit genau folgenden Feldern:
+1. "title": String (Aussagekräftiger Titel des Tests bzw. der Umfrage)
+2. "highscoreEnabled": Boolean
+   - true (Standard für Quizze/Tests): Aktiviert Highscore-Rangliste, Einzelfragen-Modus (Frage für Frage mit Fortschrittsbalken), Zeiterfassung und Punkteauswertung mit Titeln (z.B. "Du bist Legendär!", "Du bist Episch", "Das war solide").
+   - false (Für klassische Umfragen): Alle Fragen werden auf einer einzigen Seite dargestellt; reine Erfassung von Antworten ohne Punktebewertung.
+3. "questions": Array von Fragen-Objekten
+
+### VERFÜGBARE FRAGENTYPEN ("type"):
+
+1. "mc" (Multiple Choice - genau EINE Antwort ist richtig/wählbar):
+   - "text": String (Fragetext)
+   - "type": "mc"
+   - "options": Array von Optionen (mindestens 2). Jede Option ist ein Objekt mit "text" und "correct" (true/false).
+   - Quiz-Regel: Genau die richtige Option erhält "correct": true, alle anderen "correct": false.
+
+2. "mca" (Multiple Choice - MEHRERE Antworten sind wählbar):
+   - "text": String (Fragetext)
+   - "type": "mca"
+   - "options": Array von Optionen (mindestens 2). Jede Option ist ein Objekt mit "text" und "correct" (true/false).
+   - Quiz-Regel: Alle zutreffenden Optionen erhalten "correct": true, falsche "correct": false. Ein Punkt wird nur vergeben, wenn alle richtigen und keine falschen Antworten markiert wurden.
+
+3. "star" (Sterne-Bewertung von 1 bis 5 Sternen):
+   - "text": String (z.B. Feedback, Zufriedenheit, Selbsteinschätzung)
+   - "type": "star"
+   - (Kein "options"-Feld nötig).
+
+4. "slider" (Schieberegler / Skala):
+   - "text": String (Skalenfrage)
+   - "type": "slider"
+   - "min": Ganzzahl (Minimalwert, z. B. 0 oder 1)
+   - "max": Ganzzahl (Maximalwert, z. B. 10 oder 100)
+   - "minLabel": String (Beschriftung links, z. B. "Gar nicht" oder "Sehr schlecht")
+   - "maxLabel": String (Beschriftung rechts, z. B. "Voll und ganz" oder "Sehr gut")
+
+5. "text" (Offenes Freitextfeld):
+   - "text": String (Fragetext für offene Begründungen, Feedback oder Fragen)
+   - "type": "text"
+   - (Kein "options"-Feld nötig).
+
+### VOLLSTÄNDIGES REFERENZ-BEISPIEL-JSON:
+\`\`\`json
+{
+  "title": "Beispiel-Test mit allen Fragetypen",
+  "highscoreEnabled": true,
+  "questions": [
+    {
+      "text": "Was ist die chemische Formel von Wasser?",
+      "type": "mc",
+      "options": [
+        { "text": "CO2", "correct": false },
+        { "text": "H2O", "correct": true },
+        { "text": "NaCl", "correct": false },
+        { "text": "CH4", "correct": false }
+      ]
+    },
+    {
+      "text": "Welche dieser Teilchen befinden sich im Atomkern?",
+      "type": "mca",
+      "options": [
+        { "text": "Protonen", "correct": true },
+        { "text": "Elektronen", "correct": false },
+        { "text": "Neutronen", "correct": true },
+        { "text": "Photonen", "correct": false }
+      ]
+    },
+    {
+      "text": "Wie sicher fühlst du dich bei diesem Thema?",
+      "type": "slider",
+      "min": 1,
+      "max": 10,
+      "minLabel": "Sehr unsicher",
+      "maxLabel": "Vollprofi"
+    },
+    {
+      "text": "Wie verständlich fandest du die Aufgabenstellungen?",
+      "type": "star"
+    },
+    {
+      "text": "Welche Frage ist dir zu diesem Thema noch unklar?",
+      "type": "text"
+    }
+  ]
+}
+\`\`\`
+
+### ANWEISUNGEN AN DIE KI:
+- Antworte AUSSCHLIESSLICH mit dem validen JSON-Codeblock (\`\`\`json ... \`\`\`), ohne Einleitung, Begrüßung oder Schlusssätze, damit der Code direkt kopiert und in das Tool importiert werden kann.
+- Achte auf korrekte JSON-Syntax (Anführungszeichen, Kommasetzung).
+- Wähle didaktisch sinnvolle, abwechslungsreiche Fragetypen passend zum gewünschten Inhalt.
+
+======================================================================
+AUFTRAG / THEMA:
+${promptTopic}
+======================================================================`;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(promptText)
+                    .then(showCopySuccess)
+                    .catch(() => fallbackCopy(promptText));
+            } else {
+                fallbackCopy(promptText);
+            }
+
+            function fallbackCopy(text) {
+                try {
+                    const temp = document.createElement('textarea');
+                    temp.value = text;
+                    temp.style.position = 'fixed';
+                    temp.style.left = '-9999px';
+                    document.body.appendChild(temp);
+                    temp.focus();
+                    temp.select();
+                    const success = document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    if (success) {
+                        showCopySuccess();
+                    } else {
+                        alert("Kopieren nicht unterstützt. Bitte Berechtigung erteilen.");
+                    }
+                } catch (err) {
+                    alert("Kopieren fehlgeschlagen: " + err.message);
+                }
+            }
+
+            function showCopySuccess() {
+                const originalHtml = copyAiPromptBtn.innerHTML;
+                copyAiPromptBtn.innerHTML = '✅ KI-Prompt kopiert!';
+                copyAiPromptBtn.classList.add('success');
+                setTimeout(() => {
+                    copyAiPromptBtn.innerHTML = originalHtml;
+                    copyAiPromptBtn.classList.remove('success');
+                }, 2500);
+            }
+        }
+
+        if (copyAiPromptBtn) {
+            copyAiPromptBtn.addEventListener('click', copyAiPrompt);
+        }
+
         function populateFormWithTemplate(data) {
-             if (!data.questions) throw new Error("Ungültiges Format");
+            if (!data.questions) throw new Error("Ungültiges Format");
 
             // Formular zurücksetzen
-            document.getElementById('survey-title').value = data.title || '';
+            document.getElementById('survey-title').value = decodeHTML(data.title || '');
+            document.getElementById('highscore-enabled').checked = !!data.highscoreEnabled;
             const questionsContainer = document.getElementById('questions-container');
             questionsContainer.innerHTML = '';
             questionCount = 0;
@@ -794,11 +722,11 @@
             data.questions.forEach(q => {
                 addQuestion(); // Erstellt einen neuen, leeren Fragenblock
                 const newBlock = document.getElementById(`question-${questionCount}`);
-                newBlock.querySelector('.question-text').value = q.text;
+                newBlock.querySelector('.question-text').value = decodeHTML(q.text);
                 const questionTypeSelect = newBlock.querySelector('.question-type');
                 questionTypeSelect.value = q.type;
-                
-                // Event manuell auslösen, um Optionscontainer bei 'text' auszublenden
+
+                // Event manuell auslösen, um Optionscontainer bei 'text' oder 'star' auszublenden
                 questionTypeSelect.dispatchEvent(new Event('change'));
 
                 if ((q.type === 'mc' || q.type === 'mca') && q.options) {
@@ -807,11 +735,16 @@
                     q.options.forEach(opt => {
                         // Rückwärtskompatibilität: Wenn opt nur ein String ist
                         if (typeof opt === 'string') {
-                            addOption(newBlock, { text: opt, correct: false });
+                            addOption(newBlock, { text: decodeHTML(opt), correct: false });
                         } else {
-                            addOption(newBlock, opt);
+                            addOption(newBlock, { text: decodeHTML(opt.text), correct: opt.correct });
                         }
                     });
+                } else if (q.type === 'slider') {
+                    newBlock.querySelector('.slider-min').value = q.min !== undefined ? q.min : 0;
+                    newBlock.querySelector('.slider-max').value = q.max !== undefined ? q.max : 10;
+                    newBlock.querySelector('.slider-min-label').value = decodeHTML(q.minLabel || '');
+                    newBlock.querySelector('.slider-max-label').value = decodeHTML(q.maxLabel || '');
                 }
             });
         }
@@ -821,7 +754,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const data = JSON.parse(e.target.result);
                     populateFormWithTemplate(data);
@@ -830,7 +763,7 @@
                 }
             };
             reader.readAsText(file);
-            
+
             // Input zurücksetzen, damit dieselbe Datei erneut geladen werden kann
             event.target.value = '';
         }
@@ -851,6 +784,24 @@
                 alert('Fehler beim Parsen des JSON: ' + error.message);
             }
         });
+
+        function getAdminToken(promptMessage) {
+            // Im geschützten Bereich /locked: Wenn als Admin eingeloggt (admin_session Cookie),
+            // Token automatisch verwenden ohne Popup-Nachfrage!
+            const hasAdminCookie = document.cookie.split(';').some(c => c.trim().startsWith('admin_session='));
+            if (hasAdminCookie) {
+                return '86199';
+            }
+            const savedToken = localStorage.getItem('umfrage_admin_token') || '86199';
+            if (localStorage.getItem('umfrage_admin_token')) {
+                return savedToken;
+            }
+            const entered = prompt(promptMessage, savedToken);
+            if (entered) {
+                localStorage.setItem('umfrage_admin_token', entered);
+            }
+            return entered;
+        }
 
         createSurveyBtn.addEventListener('click', async () => {
             const surveyData = getSurveyDataFromForm();
@@ -876,8 +827,8 @@
                     return;
                 }
             }
-            
-            const token = prompt("Bitte geben Sie den geheimen Erstellungs-Token ein, um die Umfrage zu starten:");
+
+            const token = getAdminToken("Bitte geben Sie den geheimen Erstellungs-Token ein, um die Umfrage zu starten:");
             if (!token) {
                 alert("Erstellung abgebrochen. Kein Token eingegeben.");
                 return;
@@ -895,7 +846,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const result = await response.json();
+
+                const responseText = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Server-Antwort ist kein gültiges JSON:", responseText);
+                    throw new Error("Der Server hat keine gültige JSON-Antwort gesendet. Details in der Konsole.");
+                }
+
                 if (result.success) {
                     window.location.hash = `#results/${result.surveyId}`;
                 } else {
@@ -911,17 +871,51 @@
 
         async function showSurveyView(surveyId) {
             views.loading.classList.remove('hidden');
+            currentQuestionStep = 0;
+            activeResponseId = null;
+
+            // NEU: Prüfen, ob der Benutzer bereits an dieser Umfrage teilgenommen hat
+            const submittedKey = `submitted_${surveyId}`;
+            if (localStorage.getItem(submittedKey)) {
+                hideAllViews();
+                const surveyView = document.getElementById('survey-view');
+                surveyView.classList.remove('hidden');
+                surveyView.innerHTML = `
+                    <div class="card" style="text-align: center;">
+                        <h2>Teilnahme bereits erfolgt</h2>
+                        <p>Du hast bereits an dieser Umfrage teilgenommen.</p>
+                    </div>`;
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_BASE_URL}get_survey.php?id=${surveyId}`);
                 const survey = await response.json();
-                
+
+                console.log("Survey loaded:", survey); // Debugging
+
                 if (survey.error) throw new Error(survey.error);
 
+                // Normalisierung für Robustheit
+                if (typeof survey.highscoreEnabled === 'string') {
+                    survey.highscoreEnabled = survey.highscoreEnabled === 'true' || survey.highscoreEnabled === '1';
+                }
+
                 if (survey.highscoreEnabled) {
-                    userNickname = prompt("Bitte geben Sie Ihren Spitznamen für die Highscore-Liste ein:");
                     if (!userNickname) {
-                        alert("Für diese Umfrage ist ein Spitzname erforderlich. Du wirst zur Startseite weitergeleitet.");
-                        window.location.hash = '';
+                        userNickname = prompt("Bitte geben Sie Ihren Spitznamen für die Highscore-Liste ein:");
+                    }
+                    if (!userNickname) {
+                        // NEU: Nicht zur Startseite umleiten, sondern Fehlermeldung in der survey-view anzeigen
+                        views.loading.classList.add('hidden');
+                        const surveyView = document.getElementById('survey-view');
+                        surveyView.classList.remove('hidden');
+                        surveyView.innerHTML = `
+                            <div class="card" style="text-align: center;">
+                                <h2>Spitzname erforderlich</h2>
+                                <p>Für diese Umfrage ist ein Spitzname für die Highscore-Liste erforderlich.</p>
+                                <button onclick="location.reload()">Nochmal versuchen</button>
+                            </div>`;
                         return;
                     }
                     quizStartTime = new Date(); // Startzeit für die Zeitmessung
@@ -930,79 +924,322 @@
                     quizStartTime = null;
                 }
 
-
-                document.getElementById('participant-survey-title').innerText = survey.title;
-                const form = document.getElementById('survey-form');
-                form.innerHTML = ''; 
-
-                survey.questions.forEach(q => {
-                    const questionDiv = document.createElement('div');
-                    questionDiv.className = 'question';
-                    questionDiv.innerHTML = `<h4>${q.text}</h4>`;
-
-                    if (q.type === 'mc') {
-                        q.options.forEach(option => {
-                            const optionText = (typeof option === 'string') ? option : option.text;
-                            questionDiv.innerHTML += `
-                                <label style="display: block; margin-bottom: 10px;">
-                                    <input type="radio" name="${q.id}" value="${optionText}" required>
-                                    ${optionText}
-                                </label>
-                            `;
-                        });
-                    } else if (q.type === 'mca') {
-                        q.options.forEach(option => {
-                             const optionText = (typeof option === 'string') ? option : option.text;
-                            questionDiv.innerHTML += `
-                                <label style="display: block; margin-bottom: 10px;">
-                                    <input type="checkbox" name="${q.id}" value="${optionText}">
-                                    ${optionText}
-                                </label>
-                            `;
-                        });
-                    } else if (q.type === 'text') {
-                        questionDiv.innerHTML += `<textarea name="${q.id}" rows="3" style="width: 100%;" required></textarea>`;
-                    }
-                    form.appendChild(questionDiv);
-                });
-                
-                submitSurveyBtn.onclick = () => submitSurvey(surveyId, survey.questions);
+                renderSurveyForm(survey);
                 views.loading.classList.add('hidden');
                 views.survey.classList.remove('hidden');
 
             } catch (error) {
                 console.error("Fehler beim Laden der Umfrage:", error);
-                alert("Die Umfrage konnte nicht geladen werden.");
-                window.location.hash = '';
+                views.loading.classList.add('hidden');
+                const surveyView = document.getElementById('survey-view');
+                surveyView.innerHTML = `
+                    <div class="card" style="text-align: center;">
+                        <h2>Fehler beim Laden</h2>
+                        <p>Die Umfrage konnte nicht geladen werden: ${error.message}</p>
+                        <p>Bitte stellen Sie sicher, dass der Link korrekt ist.</p>
+                    </div>`;
+                surveyView.classList.remove('hidden');
             }
         }
-        
+
+        function renderSurveyForm(survey) {
+            const surveyView = document.getElementById('survey-view');
+            surveyView.innerHTML = `
+                <div class="card">
+                    <h2 id="participant-survey-title">${survey.title}</h2>
+                    <div id="survey-step-container"></div>
+                    <form id="survey-form" class="hidden"></form>
+                    <div class="card-footer" style="justify-content: flex-end; margin-top: 20px;">
+                        <button id="submit-survey-btn">Antworten absenden</button>
+                    </div>
+                </div>
+                <div id="thank-you-message" class="card hidden" style="text-align: center;">
+                    <h4 id="quiz-title-feedback"></h4>
+                    <div id="star-rating"></div>
+                    <p id="quiz-score-feedback"></p>
+                </div>`;
+
+            const form = document.getElementById('survey-form');
+            const stepContainer = document.getElementById('survey-step-container');
+            const submitBtn = document.getElementById('submit-survey-btn');
+
+            if (survey.highscoreEnabled) {
+                // Einzelfragen-Modus
+                showStep(survey, 0);
+                submitBtn.textContent = 'Weiter';
+                submitBtn.onclick = () => nextStep(survey);
+            } else {
+                // Klassischer Modus: Alle Fragen auf einmal
+                survey.questions.forEach(q => {
+                    const qEl = createQuestionElement(q);
+                    form.appendChild(qEl);
+                });
+                form.classList.remove('hidden');
+                submitBtn.onclick = () => submitSurvey(survey.id, survey.questions);
+            }
+        }
+
+        function createQuestionElement(q) {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question';
+            questionDiv.innerHTML = `<h4>${q.text}</h4>`;
+
+            if (q.type === 'mc') {
+                q.options.forEach(option => {
+                    const optionText = (typeof option === 'string') ? option : option.text;
+                    questionDiv.innerHTML += `
+                        <label>
+                            <input type="radio" name="${q.id}" value="${optionText}" required>
+                            <span>${optionText}</span>
+                        </label>
+                    `;
+                });
+            } else if (q.type === 'mca') {
+                q.options.forEach(option => {
+                    const optionText = (typeof option === 'string') ? option : option.text;
+                    questionDiv.innerHTML += `
+                        <label>
+                            <input type="checkbox" name="${q.id}" value="${optionText}">
+                            <span>${optionText}</span>
+                        </label>
+                    `;
+                });
+            } else if (q.type === 'star') {
+                let starHTML = `<div class="star-input-container" data-question-id="${q.id}">`;
+                for (let i = 5; i >= 1; i--) {
+                    starHTML += `
+                        <input type="radio" id="star-${q.id}-${i}" name="${q.id}" value="${i}">
+                        <label for="star-${q.id}-${i}" title="${i} Sterne">★</label>
+                    `;
+                }
+                starHTML += `</div>`;
+                questionDiv.innerHTML += starHTML;
+            } else if (q.type === 'slider') {
+                const min = q.min !== undefined ? q.min : 0;
+                const max = q.max !== undefined ? q.max : 10;
+                const minLabel = q.minLabel || '';
+                const maxLabel = q.maxLabel || '';
+                const mid = Math.floor((parseFloat(min) + parseFloat(max)) / 2);
+                
+                questionDiv.innerHTML += `
+                    <div class="slider-wrapper">
+                        <div class="slider-labels">
+                            <span class="slider-label-min">${minLabel} (${min})</span>
+                            <span class="slider-label-max">${maxLabel} (${max})</span>
+                        </div>
+                        <input type="range" name="${q.id}" min="${min}" max="${max}" value="${mid}" class="survey-slider" id="slider-${q.id}" step="1" oninput="document.getElementById('slider-val-${q.id}').textContent = this.value">
+                        <div class="slider-value-display">Ausgewählter Wert: <span id="slider-val-${q.id}">${mid}</span></div>
+                    </div>
+                `;
+            } else if (q.type === 'text') {
+                questionDiv.innerHTML += `<textarea name="${q.id}" rows="3" style="width: 100%;" required></textarea>`;
+            }
+            return questionDiv;
+        }
+
+        function showStep(survey, stepIndex) {
+            const stepContainer = document.getElementById('survey-step-container');
+            stepContainer.innerHTML = '';
+
+            // Progress Bar
+            const progress = ((stepIndex) / survey.questions.length) * 100;
+            const progressHTML = `
+                <div class="progress-details" style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9em; color: #666;">
+                    <span>Frage ${stepIndex + 1} von ${survey.questions.length}</span>
+                    <span>${Math.round(progress)}%</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: ${progress}%;"></div>
+                </div>
+            `;
+            stepContainer.innerHTML += progressHTML;
+
+            const q = survey.questions[stepIndex];
+            const qEl = createQuestionElement(q);
+            stepContainer.appendChild(qEl);
+
+            currentQuestionStep = stepIndex;
+
+            // Fokus auf das erste Eingabefeld setzen
+            const firstInput = qEl.querySelector('input, textarea');
+            if (firstInput) firstInput.focus();
+        }
+
+        async function nextStep(survey) {
+            const stepContainer = document.getElementById('survey-step-container');
+            const inputs = stepContainer.querySelectorAll('input, textarea');
+
+            // Validierung
+            let answered = false;
+            const q = survey.questions[currentQuestionStep];
+            if (q.type === 'mca') {
+                answered = Array.from(inputs).some(i => i.checked);
+            } else if (q.type === 'star') {
+                answered = Array.from(inputs).some(i => i.checked);
+            } else if (q.type === 'mc') {
+                answered = Array.from(inputs).some(i => i.checked);
+            } else if (q.type === 'slider') {
+                answered = true; // Slider has always a value
+            } else {
+                answered = inputs[0].value.trim() !== '';
+            }
+
+            if (!answered) {
+                alert("Bitte beantworte zuerst die Frage.");
+                return;
+            }
+
+            // Aktuelle Antwort sammeln
+            const answers = {};
+            if (q.type === 'mca') {
+                answers[q.id] = Array.from(inputs).filter(i => i.checked).map(i => i.value);
+            } else if (q.type === 'mc' || q.type === 'star') {
+                const checked = Array.from(inputs).find(i => i.checked);
+                answers[q.id] = checked ? checked.value : null;
+            } else if (q.type === 'slider') {
+                const sliderInput = Array.from(inputs).find(i => i.type === 'range');
+                answers[q.id] = sliderInput ? sliderInput.value : null;
+            } else {
+                answers[q.id] = inputs[0].value;
+            }
+
+            const submitBtn = document.getElementById('submit-survey-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Übermittelt...';
+
+            try {
+                // Zeit berechnen
+                let timeTaken = 0;
+                if (quizStartTime) {
+                    timeTaken = Math.round((new Date() - quizStartTime) / 1000);
+                }
+
+                // Daten senden
+                const submissionData = {
+                    surveyId: survey.id,
+                    answers: answers,
+                    responseId: activeResponseId,
+                    nickname: userNickname,
+                    timeTaken: timeTaken,
+                    currentQuestionIndex: currentQuestionStep + 1
+                };
+
+                const response = await fetch(API_BASE_URL + 'submit_answer.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submissionData)
+                });
+                const result = await response.json();
+
+                if (!result.success) throw new Error(result.message);
+
+                activeResponseId = result.responseId; // ID merken für nächsten Schritt
+
+                if (currentQuestionStep + 1 < survey.questions.length) {
+                    showStep(survey, currentQuestionStep + 1);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Weiter';
+                } else {
+                    // Ende erreicht
+                    handleSubmissionSuccess(survey.id, result);
+                }
+
+            } catch (error) {
+                alert("Fehler beim Übermitteln: " + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Weiter';
+            }
+        }
+
+        function handleSubmissionSuccess(surveyId, result) {
+            if (result.isQuiz) {
+                const scoreFeedback = `Du hast ${result.score} von ${result.totalCorrect} Fragen korrekt beantwortet.`;
+                document.getElementById('quiz-score-feedback').textContent = scoreFeedback;
+
+                const percentage = result.totalCorrect > 0 ? (result.score / result.totalCorrect) * 100 : 0;
+
+                let title = '';
+                if (percentage >= 100) title = "Du bist Legendär!";
+                else if (percentage >= 80) title = "Du bist Episch";
+                else if (percentage >= 60) title = "Das war solide";
+                else if (percentage >= 40) title = "Just made it";
+                else if (percentage >= 20) title = "Noob";
+                else title = "Fail";
+                document.getElementById('quiz-title-feedback').textContent = title;
+
+                const starRatingContainer = document.getElementById('star-rating');
+                starRatingContainer.innerHTML = '';
+                const filledStars = Math.floor(percentage / 20);
+                for (let i = 0; i < 5; i++) {
+                    const star = document.createElement('span');
+                    star.classList.add('star');
+                    star.textContent = i < filledStars ? '★' : '☆';
+                    starRatingContainer.appendChild(star);
+                }
+
+            } else {
+                document.getElementById('quiz-title-feedback').textContent = 'Vielen Dank!';
+                document.getElementById('quiz-score-feedback').textContent = 'Deine Antworten wurden erfolgreich übermittelt.';
+                document.getElementById('star-rating').innerHTML = '';
+            }
+
+            document.querySelector('#survey-view .card').classList.add('hidden');
+            document.getElementById('thank-you-message').classList.remove('hidden');
+
+            const submittedKey = `submitted_${surveyId}`;
+            localStorage.setItem(submittedKey, 'true');
+        }
+
         async function submitSurvey(surveyId, questions) {
-             const form = document.getElementById('survey-form');
-             if(!form.checkValidity()) {
+            const submitButton = document.getElementById('submit-survey-btn');
+            const form = document.getElementById('survey-form');
+
+            if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
-             }
-             
-             const formData = new FormData(form);
-             const answers = {};
-             questions.forEach(q => {
-                if (q.type === 'mca') {
-                    answers[q.id] = formData.getAll(q.id);
-                } else {
-                    answers[q.id] = formData.get(q.id);
-                }
-             });
-             
-             const submissionData = { surveyId, answers };
-             if (quizStartTime && userNickname) {
-                 const endTime = new Date();
-                 const timeTaken = Math.round((endTime - quizStartTime) / 1000); // Zeit in Sekunden
-                 submissionData.nickname = userNickname;
-                 submissionData.timeTaken = timeTaken;
-             }
+            }
 
-             try {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sende...';
+
+            try {
+                const formData = new FormData(form);
+                const answers = {};
+                let unansweredStars = [];
+
+                questions.forEach(q => {
+                    const value = formData.get(q.id);
+                    if (q.type === 'mca') {
+                        answers[q.id] = formData.getAll(q.id);
+                    } else if (q.type === 'star') {
+                        if (!value) {
+                            unansweredStars.push(q.text);
+                            answers[q.id] = "0";
+                        } else {
+                            answers[q.id] = value;
+                        }
+                    } else {
+                        answers[q.id] = value;
+                    }
+                });
+
+                if (unansweredStars.length > 0) {
+                    const confirmMsg = `Du hast folgende Sterne-Fragen nicht beantwortet:\n\n${unansweredStars.join('\n')}\n\nMöchtest du trotzdem abschicken? (Diese zählen als 0 Sterne)`;
+                    if (!confirm(confirmMsg)) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Antworten absenden';
+                        return;
+                    }
+                }
+
+                const submissionData = { surveyId, answers };
+                if (quizStartTime && userNickname) {
+                    const endTime = new Date();
+                    const timeTaken = Math.round((endTime - quizStartTime) / 1000); // Zeit in Sekunden
+                    submissionData.nickname = userNickname;
+                    submissionData.timeTaken = timeTaken;
+                }
+
                 const response = await fetch(API_BASE_URL + 'submit_answer.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1025,12 +1262,10 @@
                     else if (percentage >= 40) title = "Just made it";
                     else if (percentage >= 20) title = "Noob";
                     else title = "Fail";
-
                     document.getElementById('quiz-title-feedback').textContent = title;
 
                     const starRatingContainer = document.getElementById('star-rating');
                     starRatingContainer.innerHTML = '';
-                    // Using Math.floor is more accurate for the user's requirements (e.g., 20% = 1 star)
                     const filledStars = Math.floor(percentage / 20);
                     for (let i = 0; i < 5; i++) {
                         const star = document.createElement('span');
@@ -1040,19 +1275,28 @@
                     }
 
                 } else {
-                    document.getElementById('quiz-score-feedback').textContent = '';
-                    document.getElementById('quiz-title-feedback').textContent = '';
+                    // FIX: Standard-Dankesnachricht für normale Umfragen wieder einfügen
+                    document.getElementById('quiz-title-feedback').textContent = 'Vielen Dank!';
+                    document.getElementById('quiz-score-feedback').textContent = 'Deine Antworten wurden erfolgreich übermittelt.';
                     document.getElementById('star-rating').innerHTML = '';
                 }
 
                 document.querySelector('#survey-view .card').classList.add('hidden');
                 document.getElementById('thank-you-message').classList.remove('hidden');
-             } catch(error) {
+
+                // NEU: Teilnahme im Local Storage speichern, um erneute Teilnahme zu verhindern
+                const submittedKey = `submitted_${surveyId}`;
+                localStorage.setItem(submittedKey, 'true');
+
+            } catch (error) {
                 console.error("Fehler beim Senden der Antwort:", error);
                 alert("Ihre Antwort konnte nicht gesendet werden: " + error.message);
-             }
+                // Wichtig: Button nur im Fehlerfall wieder aktivieren, damit der User es erneut versuchen kann
+                submitButton.disabled = false;
+                submitButton.textContent = 'Antworten absenden';
+            }
         }
-        
+
         // --- Ansicht: Live-Ergebnisse ---
 
         async function deleteSurvey(surveyId, _isSilent = false) {
@@ -1062,7 +1306,7 @@
             }
 
             // Fordern Sie den Benutzer zur Eingabe des Tokens auf
-            const token = prompt("Bitte geben Sie den geheimen Lösch-Token ein, um fortzufahren:");
+            const token = getAdminToken("Bitte geben Sie den geheimen Lösch-Token ein, um fortzufahren:");
             if (!token) {
                 // Benutzer hat Abbrechen gedrückt oder nichts eingegeben
                 if (!_isSilent) {
@@ -1077,7 +1321,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ surveyId: surveyId, token: token })
                 });
-                
+
                 const result = await response.json();
 
                 if (result.success) {
@@ -1096,7 +1340,7 @@
         }
 
         async function togglePauseSurvey(surveyId, pauseStatus) {
-            const token = prompt("Bitte geben Sie den geheimen Pause-Token ein:");
+            const token = getAdminToken("Bitte geben Sie den geheimen Pause-Token ein:");
             if (!token) {
                 alert("Vorgang abgebrochen. Kein Token eingegeben.");
                 return;
@@ -1118,21 +1362,21 @@
                 console.error(error);
             }
         }
-        
+
         async function showResultsView(surveyId) {
             views.loading.classList.remove('hidden');
-            
+
             const link = `${window.location.origin}${window.location.pathname}#survey/${surveyId}`;
             document.getElementById('share-link').innerText = link;
-            
+
             const qrcodeContainer = document.getElementById('qrcode');
             qrcodeContainer.innerHTML = '';
             new QRCode(qrcodeContainer, { text: link, width: 256, height: 256 });
-            
+
             copyLinkBtn.onclick = () => {
                 navigator.clipboard.writeText(link).then(() => {
-                   copyLinkBtn.innerText = "Kopiert!";
-                   setTimeout(() => { copyLinkBtn.innerText = "Link kopieren"; }, 2000);
+                    copyLinkBtn.innerText = "Kopiert!";
+                    setTimeout(() => { copyLinkBtn.innerText = "Link kopieren"; }, 2000);
                 });
             };
 
@@ -1142,36 +1386,37 @@
                     const data = await response.json();
 
                     if (data.error) throw new Error(data.error);
-                    
+
                     if (document.getElementById('results-survey-title').innerText === 'Live-Ergebnisse' || data.survey.paused) {
-                         document.getElementById('results-survey-title').innerText = `Live-Ergebnisse: ${data.survey.title}`;
-                         exportPdfBtn.onclick = () => exportResultsAsPDF(data.survey.title);
-                         deleteSurveyBtn.onclick = () => deleteSurvey(surveyId);
-                         const pauseBtn = document.getElementById('pause-survey-results-btn');
-                         pauseBtn.textContent = data.survey.paused ? 'Umfrage fortsetzen' : 'Umfrage pausieren';
-                         pauseBtn.onclick = async () => {
+                        document.getElementById('results-survey-title').innerHTML = `Live-Ergebnisse: ${data.survey.title}`;
+                        exportPdfBtn.onclick = () => exportResultsAsPDF(data.survey.title);
+                        deleteSurveyBtn.onclick = () => deleteSurvey(surveyId);
+                        const pauseBtn = document.getElementById('pause-survey-results-btn');
+                        pauseBtn.textContent = data.survey.paused ? 'Fortsetzen' : 'Pausieren';
+                        pauseBtn.onclick = async () => {
                             await togglePauseSurvey(surveyId, !data.survey.paused);
                             // We need to refetch the data to get the updated paused status
                             fetchAndRenderResults();
-                         };
+                        };
                     }
-                    
+
                     renderResults(data.survey, data.responses, data.highscore);
-                    
+
                     views.loading.classList.add('hidden');
                     views.results.classList.remove('hidden');
                 } catch (error) {
-                    console.error("Fehler beim Laden der Ergebnisse:", error);
-                    alert("Die Ergebnisse konnten nicht geladen werden.");
-                    if(pollInterval) clearInterval(pollInterval);
-                    window.location.hash = '';
+                    console.error("Fehler beim Laden der Ergebnisse (Polling wird fortgesetzt):", error);
+                    // Wir zeigen keinen Alert und brechen nicht ab, da es ein temporärer Netzwerkfehler sein könnte
                 }
             };
-            
+
             await fetchAndRenderResults(); // Initialer Aufruf
-            pollInterval = setInterval(fetchAndRenderResults, 5000); // Alle 5 Sekunden pollen
+
+            // Polling-Intervall: 5 Sekunden (erhöht von 3 zur Schonung des Servers)
+            const interval = 5000;
+            pollInterval = setInterval(fetchAndRenderResults, interval);
         }
-        
+
         function renderHighscore(highscore) {
             const container = document.getElementById('highscore-container');
 
@@ -1182,12 +1427,23 @@
 
             let rowsHTML = '';
             highscore.forEach((entry, index) => {
+                const isFinished = entry.currentQuestionIndex >= entry.totalQuestions;
+                const progressText = isFinished ? 'Abgeschlossen' : `Frage ${entry.currentQuestionIndex} / ${entry.totalQuestions}`;
+                const liveIndicator = !isFinished ? '<span class="highscore-live">● LIVE</span>' : '';
+                const rankClass = index < 3 ? `rank-${index + 1}` : '';
+
+                let rankTitle = '';
+                if (index === 0) rankTitle = '<span class="rank-title title-1">Legendär</span>';
+                else if (index === 1) rankTitle = '<span class="rank-title title-2">Episch</span>';
+                else if (index === 2) rankTitle = '<span class="rank-title title-3">Selten</span>';
+
                 rowsHTML += `
                     <tr>
-                        <td class="rank">${index + 1}</td>
-                        <td>${entry.nickname}</td>
+                        <td class="rank"><span class="rank-badge ${rankClass}">${index + 1}</span></td>
+                        <td>${entry.nickname} ${rankTitle} ${liveIndicator}</td>
                         <td>${entry.score}</td>
-                        <td>${entry.timeTaken}</td>
+                        <td>${entry.timeTaken}s</td>
+                        <td>${progressText}</td>
                     </tr>
                 `;
             });
@@ -1212,7 +1468,8 @@
                                     <th>Rang</th>
                                     <th>Spitzname</th>
                                     <th>Punkte</th>
-                                    <th>Zeit (Sekunden)</th>
+                                    <th>Zeit</th>
+                                    <th>Fortschritt</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1241,9 +1498,14 @@
 
         function renderResults(survey, responses, highscore = null) {
             const container = document.getElementById('results-container');
-            container.innerHTML = '';
 
-            if (survey.highscoreEnabled) {
+            // Normalisierung für Robustheit
+            let highscoreEnabled = survey.highscoreEnabled;
+            if (typeof highscoreEnabled === 'string') {
+                highscoreEnabled = highscoreEnabled === 'true' || highscoreEnabled === '1';
+            }
+
+            if (highscoreEnabled) {
                 renderHighscore(highscore);
             } else {
                 document.getElementById('highscore-container').innerHTML = '';
@@ -1254,15 +1516,36 @@
                 return;
             }
 
-            // Prüfen, ob es sich um ein Quiz handelt (mindestens eine Frage hat eine korrekte Antwort)
+            // Wenn der Container noch den Loader zeigt, leeren wir ihn einmal für den ersten Aufbau
+            if (container.querySelector('.loader')) {
+                container.innerHTML = '';
+            }
+
+            // Prüfen, ob es sich um ein Quiz handelt
             const isQuiz = survey.questions.some(q =>
                 q.options && q.options.some(opt => typeof opt === 'object' && opt.correct)
             );
 
             survey.questions.forEach(q => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `<h3>${q.text}</h3>`;
+                let card = document.getElementById(`result-card-${q.id}`);
+                const isNewCard = !card;
+
+                if (isNewCard) {
+                    card = document.createElement('div');
+                    card.className = 'card';
+                    card.id = `result-card-${q.id}`;
+                    card.dataset.type = q.type; // NEU: Typ speichern für PDF-Export
+                    if (q.type === 'slider') {
+                        card.dataset.min = q.min !== undefined ? q.min : 0;
+                        card.dataset.max = q.max !== undefined ? q.max : 10;
+                        card.dataset.minLabel = q.minLabel || '';
+                        card.dataset.maxLabel = q.maxLabel || '';
+                    }
+                    card.innerHTML = `<h3>${q.text}</h3><div class="results-content"></div>`;
+                    container.appendChild(card);
+                }
+
+                const contentDiv = card.querySelector('.results-content');
 
                 if (q.type === 'mc' || q.type === 'mca') {
                     const results = {};
@@ -1276,10 +1559,10 @@
                         const answer = res.answers[q.id];
                         if (q.type === 'mca' && Array.isArray(answer)) {
                             answer.forEach(ans => {
-                                if (ans in results) {
-                                    results[ans]++;
-                                    totalVotes++;
-                                }
+                                    if (ans in results) {
+                                        results[ans]++;
+                                        totalVotes++;
+                                    }
                             });
                         } else if (answer in results) {
                             results[answer]++;
@@ -1287,82 +1570,352 @@
                         }
                     });
 
-                    q.options.forEach(opt => {
+                    // Update oder erstelle Balken für jede Option
+                    q.options.forEach((opt, index) => {
                         const optionText = typeof opt === 'string' ? opt : opt.text;
                         const isCorrect = isQuiz && (typeof opt === 'object' && opt.correct);
                         const count = results[optionText];
                         const percentage = totalVotes > 0 ? (count / totalVotes * 100).toFixed(1) : 0;
                         const barColorClass = isQuiz ? (isCorrect ? 'result-bar-correct' : 'result-bar-incorrect') : '';
 
-                        const resultBarHTML = `
+                        let optionWrapper = contentDiv.querySelector(`.option-wrapper-${index}`);
+                        if (!optionWrapper) {
+                            optionWrapper = document.createElement('div');
+                            optionWrapper.className = `option-wrapper-${index}`;
+                            contentDiv.appendChild(optionWrapper);
+                        }
+
+                        optionWrapper.innerHTML = `
                             <div>
-                                <strong>${optionText}</strong> (${count} Stimme${count !== 1 ? 'n' : ''})
+                                <strong>${optionText}</strong> (<span class="vote-count">${count}</span> Stimme${count !== 1 ? 'n' : ''})
                             </div>
                             <div class="result-bar-container">
                                 <div class="result-bar ${barColorClass}" style="width: ${percentage}%;">
-                                    ${percentage > 5 ? (percentage + '%') : ''}
+                                    <span class="percentage-label">${percentage > 5 ? (percentage + '%') : ''}</span>
                                 </div>
                             </div>`;
-                        card.innerHTML += resultBarHTML;
                     });
 
+                } else if (q.type === 'star') {
+                    const allRatings = responses
+                        .map(res => parseInt(res.answers[q.id]))
+                        .filter(val => !isNaN(val));
+
+                    const average = allRatings.length > 0
+                        ? (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1)
+                        : 0;
+
+                    let starDisplay = '';
+                    const fullStars = Math.floor(average);
+                    const halfStar = (average - fullStars) >= 0.5;
+                    for (let i = 1; i <= 5; i++) {
+                        if (i <= fullStars) starDisplay += '★';
+                        else if (i === fullStars + 1 && halfStar) starDisplay += '⭐'; // Or just ★ for simplicity in basic unicode
+                        else starDisplay += '☆';
+                    }
+
+                    contentDiv.innerHTML = `
+                        <div class="star-result-container">
+                            <span class="average-score">${average}</span>
+                            <span class="stars-display">${starDisplay}</span>
+                            <span class="vote-count">(${allRatings.length} Stimme${allRatings.length !== 1 ? 'n' : ''})</span>
+                        </div>
+                    `;
+
+                } else if (q.type === 'slider') {
+                    const min = q.min !== undefined ? parseFloat(q.min) : 0;
+                    const max = q.max !== undefined ? parseFloat(q.max) : 10;
+                    const minLabel = q.minLabel || '';
+                    const maxLabel = q.maxLabel || '';
+
+                    const allRatings = responses
+                        .map(res => parseFloat(res.answers[q.id]))
+                        .filter(val => !isNaN(val));
+
+                    const average = allRatings.length > 0
+                        ? (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1)
+                        : min.toFixed(1);
+
+                    const percentage = (max - min) > 0 ? ((parseFloat(average) - min) / (max - min)) * 100 : 0;
+                    const clampedPercentage = Math.min(Math.max(percentage, 0), 100);
+
+                    contentDiv.innerHTML = `
+                        <div class="slider-result-container">
+                            <div class="slider-result-stats">
+                                <span class="average-score">${average}</span>
+                                <span class="vote-count">(${allRatings.length} Stimme${allRatings.length !== 1 ? 'n' : ''})</span>
+                            </div>
+                            <div class="slider-result-track-wrapper">
+                                <div class="slider-result-labels">
+                                    <span>${minLabel} (${min})</span>
+                                    <span>${maxLabel} (${max})</span>
+                                </div>
+                                <div class="slider-result-track">
+                                    <div class="slider-result-pin" style="left: ${clampedPercentage}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
                 } else if (q.type === 'text') {
-                    const answersDiv = document.createElement('div');
-                    responses.forEach(res => {
-                        const answerText = res.answers[q.id];
-                        if (answerText) {
+                    // Für Textantworten: Neue Antworten hinzufügen, falls vorhanden
+                    const currentAnswersCount = contentDiv.querySelectorAll('.text-answer').length;
+                    const allTextAnswers = responses
+                        .map(res => res.answers[q.id])
+                        .filter(ans => ans && ans.trim() !== '');
+
+                    if (allTextAnswers.length > currentAnswersCount) {
+                        // Nur die neuen Antworten hinzufügen
+                        for (let i = currentAnswersCount; i < allTextAnswers.length; i++) {
                             const answerEl = document.createElement('div');
                             answerEl.className = 'text-answer';
-                            answerEl.textContent = answerText;
-                            answersDiv.appendChild(answerEl);
+                            answerEl.textContent = allTextAnswers[i];
+                            contentDiv.appendChild(answerEl);
                         }
-                    });
-                    card.appendChild(answersDiv);
+                    } else if (allTextAnswers.length === 0 && currentAnswersCount === 0) {
+                        contentDiv.innerHTML = '<p>Noch keine Antworten.</p>';
+                    }
                 }
-                container.appendChild(card);
             });
         }
-        
+
         // --- Hilfsfunktionen ---
-        
+
+        function decodeHTML(html) {
+            const txt = document.createElement("textarea");
+            txt.innerHTML = html;
+            return txt.value;
+        }
+
         async function exportResultsAsPDF(title) {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-            const resultCards = document.querySelectorAll('#results-container .card');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
             const margin = 15;
             let yPosition = margin;
 
+            // PDF Styling
+            const titleFontSize = 18;
+            const questionFontSize = 14;
+            const answerFontSize = 11;
+            const lineHeight = 7;
+
             // Titel hinzufügen
-            pdf.setFontSize(18);
+            pdf.setFontSize(titleFontSize);
+            pdf.setFont("helvetica", "bold");
             const splitTitle = pdf.splitTextToSize(title, pdfWidth - margin * 2);
             pdf.text(splitTitle, margin, yPosition);
-            yPosition += (splitTitle.length * 10) + 10; // Platz nach dem Titel
+            yPosition += (splitTitle.length * lineHeight) + 10;
 
-            // Jede Ergebnis-Karte einzeln verarbeiten
+            // Export von Daten aus dem aktuellen DOM-Stand oder besser: fetchAndRenderResults intern nutzen
+            // Aber der einfachste Weg für "lesbar" ist, die DOM-Elemente textuell zu parsen:
+            const resultCards = document.querySelectorAll('#results-container .card');
+
             for (const card of resultCards) {
-                const canvas = await html2canvas(card, { scale: 1.5 });
-                const imgData = canvas.toDataURL('image/jpeg', 0.8);
-                
-                const imgProps = pdf.getImageProperties(imgData);
-                const imgHeight = (imgProps.height * (pdfWidth - margin * 2)) / imgProps.width;
+                const questionText = card.querySelector('h3').innerText;
+                const options = card.querySelectorAll('.results-content > div[class^="option-wrapper"]');
+                const textAnswers = card.querySelectorAll('.text-answer');
 
-                // Prüfen, ob die Karte auf die aktuelle Seite passt
-                if (yPosition + imgHeight > pageHeight - margin) {
+                 // --- Höhe berechnen ---
+                let cardHeight = 0;
+
+                // Frage-Höhe
+                pdf.setFontSize(questionFontSize);
+                const splitQuestion = pdf.splitTextToSize(questionText, pdfWidth - margin * 2);
+                cardHeight += (splitQuestion.length * lineHeight) + 3;
+
+                // Antwort-Höhen
+                pdf.setFontSize(answerFontSize);
+                if (options.length > 0) {
+                    options.forEach(opt => {
+                        const optionText = opt.querySelector('strong').innerText;
+                        const voteText = opt.querySelector('.vote-count').innerText;
+                        const text = `- ${optionText} (${voteText} Stimmen)`;
+                        const splitText = pdf.splitTextToSize(text, pdfWidth - margin * 2.5);
+                        cardHeight += (splitText.length * lineHeight) + 1 + 4 + 5; // Text + Abstand + Balken + Margin
+                    });
+                } else if (card.dataset.type === 'star') {
+                    cardHeight += lineHeight + 5; // Durchschnittstext + Sterne
+                } else if (card.dataset.type === 'slider') {
+                    cardHeight += lineHeight * 2 + 10; // Durchschnittstext + Slider bar height + spacing
+                } else {
+                    textAnswers.forEach(ans => {
+                        const text = ans.innerText.trim();
+                        const splitText = pdf.splitTextToSize("» " + text, pdfWidth - margin * 2.5);
+                        cardHeight += (splitText.length * lineHeight) + 2;
+                    });
+                    if (textAnswers.length === 0) cardHeight += lineHeight;
+                }
+                cardHeight += 10; // Abstand zum nächsten Block
+
+                // --- Seitenumbruch prüfen ---
+                // Wenn die gesamte Karte nicht mehr auf die Seite passt, neue Seite beginnen
+                if (yPosition + cardHeight > pageHeight - margin && cardHeight < (pageHeight - margin * 2)) {
                     pdf.addPage();
-                    yPosition = margin; // Position auf der neuen Seite zurücksetzen
+                    yPosition = margin;
                 }
 
-                pdf.addImage(imgData, 'JPEG', margin, yPosition, pdfWidth - margin * 2, imgHeight);
-                yPosition += imgHeight + 5; // Nächste Position + kleiner Abstand
+                // --- Karte rendern ---
+                // Frage
+                pdf.setFontSize(questionFontSize);
+                pdf.setFont("helvetica", "bold");
+                pdf.text(splitQuestion, margin, yPosition);
+                yPosition += (splitQuestion.length * lineHeight) + 3;
+
+                // Antworten
+                pdf.setFontSize(answerFontSize);
+                pdf.setFont("helvetica", "normal");
+
+                if (options.length > 0) {
+                    options.forEach(opt => {
+                        const optionText = opt.querySelector('strong').innerText;
+                        const voteText = opt.querySelector('.vote-count').innerText;
+                        const percentageLabel = opt.querySelector('.percentage-label').innerText;
+                        const percentage = parseFloat(percentageLabel) || 0;
+
+                        const text = `- ${optionText} (${voteText} Stimmen)`;
+                        const splitText = pdf.splitTextToSize(text, pdfWidth - margin * 2.5);
+
+                        // Fallback: Falls eine einzelne Karte DOCH über eine Seite geht
+                        if (yPosition + (splitText.length * lineHeight) > pageHeight - margin) {
+                            pdf.addPage();
+                            yPosition = margin;
+                        }
+
+                        pdf.text(splitText, margin + 5, yPosition);
+                        yPosition += (splitText.length * lineHeight) + 1;
+
+                        const barWidth = pdfWidth - margin * 3.5;
+                        const barHeight = 4;
+                        const barX = margin + 10;
+
+                        pdf.setFillColor(240, 240, 240);
+                        pdf.rect(barX, yPosition, barWidth, barHeight, 'F');
+
+                        if (percentage > 0) {
+                            pdf.setFillColor(56, 189, 248);
+                            pdf.rect(barX, yPosition, (barWidth * percentage) / 100, barHeight, 'F');
+                        }
+
+                        yPosition += barHeight + 5;
+                    });
+                } else if (card.dataset.type === 'star') {
+                    const averageScore = parseFloat(card.querySelector('.average-score')?.innerText) || 0;
+                    const voteCount = card.querySelector('.vote-count')?.innerText || '(0 Stimmen)';
+
+                    pdf.text(`Durchschnitt: ${averageScore.toFixed(1)}`, margin + 5, yPosition);
+
+                    const starSize = 4;
+                    let starX = margin + 45;
+                    for (let i = 1; i <= 5; i++) {
+                        const fill = i <= Math.round(averageScore) ? 1 : 0;
+                        drawPFDStar(pdf, starX, yPosition - starSize + 0.5, starSize, fill);
+                        starX += starSize + 1;
+                    }
+
+                    pdf.text(voteCount, starX + 2, yPosition);
+                    yPosition += lineHeight + 5;
+
+                } else if (card.dataset.type === 'slider') {
+                    const averageScore = parseFloat(card.querySelector('.average-score')?.innerText) || 0;
+                    const voteCount = card.querySelector('.vote-count')?.innerText || '(0 Stimmen)';
+                    const min = parseFloat(card.dataset.min) || 0;
+                    const max = parseFloat(card.dataset.max) || 10;
+                    const minLabel = card.dataset.minLabel || '';
+                    const maxLabel = card.dataset.maxLabel || '';
+
+                    pdf.text(`Durchschnitt: ${averageScore.toFixed(1)} (${minLabel ? minLabel + ' ' : ''}${min} bis ${maxLabel ? maxLabel + ' ' : ''}${max})`, margin + 5, yPosition);
+                    yPosition += lineHeight;
+
+                    // Draw visual bar representing slider average in the PDF
+                    const barWidth = pdfWidth - margin * 3.5;
+                    const barHeight = 3;
+                    const barX = margin + 10;
+
+                    // Draw track
+                    pdf.setFillColor(240, 240, 240);
+                    pdf.rect(barX, yPosition, barWidth, barHeight, 'F');
+
+                    // Draw average pin
+                    const percentage = (max - min) > 0 ? (averageScore - min) / (max - min) : 0;
+                    const clampedPercentage = Math.min(Math.max(percentage, 0), 100);
+                    const pinX = barX + (barWidth * clampedPercentage);
+                    
+                    pdf.setFillColor(56, 189, 248); // Sky blue
+                    pdf.circle(pinX, yPosition + barHeight / 2, 2.5, 'F');
+
+                    pdf.text(voteCount, barX + barWidth + 2, yPosition + 2);
+                    yPosition += barHeight + 8;
+
+                } else {
+                    textAnswers.forEach(ans => {
+                        const text = ans.innerText.trim();
+                        const splitText = pdf.splitTextToSize("» " + text, pdfWidth - margin * 2.5);
+
+                        if (yPosition + (splitText.length * lineHeight) > pageHeight - margin) {
+                            pdf.addPage();
+                            yPosition = margin;
+                        }
+
+                        pdf.text(splitText, margin + 5, yPosition);
+                        yPosition += (splitText.length * lineHeight) + 2;
+                    });
+                    if (textAnswers.length === 0) {
+                        pdf.text("Keine Antworten.", margin + 5, yPosition);
+                        yPosition += lineHeight;
+                    }
+                }
+                yPosition += 10;
             }
-            
-            pdf.save(`Umfrage-Ergebnisse-${title.replace(/ /g,"_")}.pdf`);
+
+            pdf.save(`Umfrage-Ergebnisse-${title.replace(/ /g, "_")}.pdf`);
+        }
+
+        // Hilfsfunktion zum Zeichnen eines Sterns im PDF
+        function drawPFDStar(pdf, x, y, size, fillPercent = 0) {
+            const points = [];
+            const outerRadius = size / 2;
+            const innerRadius = outerRadius * 0.4;
+            const cx = x + outerRadius;
+            const cy = y + outerRadius;
+
+            for (let i = 0; i < 10; i++) {
+                const angle = (Math.PI / 5) * i - Math.PI / 2;
+                const r = i % 2 === 0 ? outerRadius : innerRadius;
+                points.push([
+                    cx + r * Math.cos(angle),
+                    cy + r * Math.sin(angle)
+                ]);
+            }
+
+            // Stern zeichnen
+            pdf.setLineWidth(0.1);
+            pdf.setDrawColor(251, 191, 36); // Amber 400
+
+            if (fillPercent >= 1) {
+                // Voller Stern
+                pdf.setFillColor(251, 191, 36);
+                pdf.lines(points.map((p, i) => {
+                    const next = points[(i + 1) % 10];
+                    return [next[0] - p[0], next[1] - p[1]];
+                }), cx + 0 * Math.cos(-Math.PI / 2), cy + outerRadius * Math.sin(-Math.PI / 2), [1, 1], 'F');
+            } else {
+                // Leerer Stern (Umriss)
+                pdf.lines(points.map((p, i) => {
+                    const next = points[(i + 1) % 10];
+                    return [next[0] - p[0], next[1] - p[1]];
+                }), cx + 0 * Math.cos(-Math.PI / 2), cy + outerRadius * Math.sin(-Math.PI / 2), [1, 1], 'D');
+
+                if (fillPercent > 0) {
+                    // Optional: Halber Stern (komplizierter zu zeichnen mit lines, daher hier einfach Umriss)
+                }
+            }
         }
 
         // --- App starten ---
         document.addEventListener('DOMContentLoaded', handleRouting);
     </script>
 </body>
+
 </html>

@@ -1,0 +1,230 @@
+{
+  "title": "Feedback-Umfrage zum KI-Tag",
+  "questions": [
+    {
+      "text": "Wie bewertest du die beiden KI-Tage insgesamt?",
+      "type": "mc",
+      "options": [
+        {
+          "text": "1 (Sehr gut)",
+          "correct": false
+        },
+        {
+          "text": "2 (Gut)",
+          "correct": false
+        },
+        {
+          "text": "3 (Mittelmäßig)",
+          "correct": false
+        },
+        {
+          "text": "4 (Weniger gut)",
+          "correct": false
+        },
+        {
+          "text": "5 (Schlecht)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Wie gut verstehst du nach dem Workshop, was KI ist und wo sie im Alltag vorkommt?",
+      "type": "mc",
+      "options": [
+        {
+          "text": "Viel besser als vorher",
+          "correct": false
+        },
+        {
+          "text": "Etwas besser als vorher",
+          "correct": false
+        },
+        {
+          "text": "Unverändert",
+          "correct": false
+        },
+        {
+          "text": "Ich bin jetzt verwirrter",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Wie hilfreich war die Einführung in 'Effektives Prompten' (z.B. mit dem CRAFT-Framework) an Tag 1?",
+      "type": "mc",
+      "options": [
+        {
+          "text": "Sehr hilfreich",
+          "correct": false
+        },
+        {
+          "text": "Hilfreich",
+          "correct": false
+        },
+        {
+          "text": "Neutral",
+          "correct": false
+        },
+        {
+          "text": "Wenig hilfreich",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Wie viel hast du beim Thema 'Quellenkritik und Fakten-Check' (Tag 2) dazugelernt?",
+      "type": "mc",
+      "options": [
+        {
+          "text": "Sehr viel",
+          "correct": false
+        },
+        {
+          "text": "Viel",
+          "correct": false
+        },
+        {
+          "text": "Mittelmäßig",
+          "correct": false
+        },
+        {
+          "text": "Wenig",
+          "correct": false
+        },
+        {
+          "text": "Nichts",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Welcher Teil des Workshops war für dich am nützlichsten? (Nur eine Antwort)",
+      "type": "mc",
+      "options": [
+        {
+          "text": "Tag 1: Vorstellung der KI-Tools (Foobiz: Text, Bild, etc.)",
+          "correct": false
+        },
+        {
+          "text": "Tag 1: Praktische Übungen mit den Tools (Rotation)",
+          "correct": false
+        },
+        {
+          "text": "Tag 2: Übung zu Quellenkritik / Fakten-Check",
+          "correct": false
+        },
+        {
+          "text": "Tag 2: KI-basierte Recherche (NotebookLM, etc.)",
+          "correct": false
+        },
+        {
+          "text": "Tag 2: KI-Feedback-Tools (Tutor-Prompt)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Wie bewertest du die praktischen Übungen (Gruppenarbeit/Rotation an Tag 1 und Übung zu Fakten-Check/Feedback an Tag 2)?",
+      "type": "mc",
+      "options": [
+        {
+          "text": "1 (Sehr gut, sehr nützlich)",
+          "correct": false
+        },
+        {
+          "text": "2 (Gut)",
+          "correct": false
+        },
+        {
+          "text": "3 (Mittelmäßig)",
+          "correct": false
+        },
+        {
+          "text": "4 (Weniger gut)",
+          "correct": false
+        },
+        {
+          "text": "5 (Schlecht, hat nichts gebracht)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "War das Tempo des Workshops...",
+      "type": "mc",
+      "options": [
+        {
+          "text": "...genau richtig.",
+          "correct": false
+        },
+        {
+          "text": "...eher zu schnell.",
+          "correct": false
+        },
+        {
+          "text": "...eher zu langsam.",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Wirst du die vorgestellten KI-Tools und Methoden (Prompting, Fakten-Check) zukünftig für die Schule nutzen?",
+      "type": "mc",
+      "options": [
+        {
+          "text": "Ja, auf jeden Fall",
+          "correct": false
+        },
+        {
+          "text": "Wahrscheinlich schon",
+          "correct": false
+        },
+        {
+          "text": "Vielleicht",
+          "correct": false
+        },
+        {
+          "text": "Eher nicht",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Fühlst du dich jetzt sicherer im Umgang mit KI-Tools als vor dem Workshop?",
+      "type": "mc",
+      "options": [
+        {
+          "text": "Viel sicherer",
+          "correct": false
+        },
+        {
+          "text": "Etwas sicherer",
+          "correct": false
+        },
+        {
+          "text": "Unverändert",
+          "correct": false
+        },
+        {
+          "text": "Unsicherer",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "text": "Worüber hättest du gerne mehr erfahren, bzw. welches Thema kam dir zu kurz?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Was nimmst du konkret aus diesen beiden Tagen mit, also was wirst du in Zukunft daraus anwenden bzw. umsetzen?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "text": "Was würdest du uns empfehlen wegzulassen, wenn diese Veranstaltung das nächste Jahr wieder stattfindet?",
+      "type": "text",
+      "options": []
+    }
+  ]
+}

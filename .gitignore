@@ -1,1 +1,8 @@
 server.log
+api/data/*.json
+api/data/*.lock
+!api/data/.gitkeep
+api/*_old*
+*_Backup*
+*_backup*
+*_old*
